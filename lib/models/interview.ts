@@ -4,6 +4,7 @@ import { nanoid } from "nanoid";
 export interface IInterview extends Document {
   roomId: string;
   title?: string;
+  durationMinutes?: number;
   createdAt: Date;
   startedAt?: Date;
   endedAt?: Date;
@@ -27,6 +28,11 @@ const InterviewSchema: Schema = new Schema({
   title: {
     type: String,
     default: "Interview Session",
+  },
+  durationMinutes: {
+    type: Number,
+    min: 1,
+    max: 480,
   },
   createdAt: {
     type: Date,
