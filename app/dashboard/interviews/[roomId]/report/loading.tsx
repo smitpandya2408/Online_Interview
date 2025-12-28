@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function Loading() {
   return (
     <div className="min-h-dvh bg-gradient-to-b from-white to-slate-50 dark:from-zinc-950 dark:to-zinc-900">
-      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+      <main className="w-full px-4 py-8 sm:px-8 lg:px-10 2xl:px-16">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="h-4 w-24 animate-pulse rounded-lg bg-slate-200 dark:bg-zinc-800" />

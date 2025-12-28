@@ -34,6 +34,7 @@ export default async function handler(_: NextApiRequest, res: NextApiResponseWit
   res.socket.server.io = io;
 
   const roomPeers = new Map<string, Set<string>>();
+  const roomPresenter = new Map<string, string>();
 
   io.on("connection", (socket) => {
     let currentRoomId: string | null = null;
@@ -61,7 +62,42 @@ export default async function handler(_: NextApiRequest, res: NextApiResponseWit
 
       socket.emit("webrtc:peers", Array.from(set).filter((id) => id !== peerId));
       socket.to(roomId).emit("webrtc:peer-joined", peerId);
+
+      const presenterId = roomPresenter.get(roomId);
+      if (presenterId) {
+        socket.emit("webrtc:screen-share", { peerId: presenterId, active: true });
+      }
     });
+
+    socket.on(
+      "webrtc:screen-share-start",
+      (payload: { roomId?: string; peerId?: string }) => {
+        const roomId = payload.roomId?.trim();
+        const peerId = payload.peerId?.trim();
+        if (!roomId || !peerId) return;
+
+        const peers = roomPeers.get(roomId);
+        if (!peers || !peers.has(peerId)) return;
+
+        roomPresenter.set(roomId, peerId);
+        io.to(roomId).emit("webrtc:screen-share", { peerId, active: true });
+      }
+    );
+
+    socket.on(
+      "webrtc:screen-share-stop",
+      (payload: { roomId?: string; peerId?: string }) => {
+        const roomId = payload.roomId?.trim();
+        const peerId = payload.peerId?.trim();
+        if (!roomId || !peerId) return;
+
+        const current = roomPresenter.get(roomId);
+        if (current !== peerId) return;
+
+        roomPresenter.delete(roomId);
+        io.to(roomId).emit("webrtc:screen-share", { peerId, active: false });
+      }
+    );
 
     socket.on(
       "chat:send",
@@ -156,6 +192,13 @@ export default async function handler(_: NextApiRequest, res: NextApiResponseWit
 
     socket.on("disconnect", () => {
       if (!currentRoomId || !currentPeerId) return;
+
+      const presenterId = roomPresenter.get(currentRoomId);
+      if (presenterId && presenterId === currentPeerId) {
+        roomPresenter.delete(currentRoomId);
+        io.to(currentRoomId).emit("webrtc:screen-share", { peerId: currentPeerId, active: false });
+      }
+
       const set = roomPeers.get(currentRoomId);
       if (!set) return;
 

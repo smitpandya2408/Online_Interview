@@ -30,6 +30,44 @@ export default async function RoomPage({ params }: RoomPageProps) {
     notFound();
   }
 
+  const scheduledAt = (interview as unknown as { scheduledAt?: unknown }).scheduledAt;
+  const scheduledDate = scheduledAt ? new Date(scheduledAt as any) : null;
+  const hasValidSchedule = !!scheduledDate && !Number.isNaN(scheduledDate.getTime());
+  const now = new Date();
+
+  const isNotStarted = interview.status === "scheduled" || interview.status === "created";
+  if (hasValidSchedule && isNotStarted && scheduledDate!.getTime() > now.getTime()) {
+    return (
+      <div className="min-h-dvh bg-gradient-to-b from-white to-slate-50 dark:from-zinc-950 dark:to-zinc-900">
+        <SiteHeader className="border-b border-transparent" />
+
+        <main className="w-full px-4 py-8 sm:px-8 lg:px-10 2xl:px-16">
+          <Card>
+            <CardHeader>
+              <CardTitle>Interview is scheduled</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-slate-700 dark:text-zinc-300">
+                This interview room will be available at:
+              </div>
+              <div className="mt-2 text-lg font-semibold tracking-tight text-slate-950 dark:text-zinc-50">
+                {scheduledDate!.toLocaleString()}
+              </div>
+              <div className="mt-4 flex items-center gap-2">
+                <Link
+                  href="/join"
+                  className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50 dark:bg-zinc-950 dark:text-zinc-300 dark:ring-zinc-800 dark:hover:bg-zinc-900"
+                >
+                  Back
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
+
   const durationMinutes =
     typeof interview.durationMinutes === "number" && Number.isFinite(interview.durationMinutes)
       ? interview.durationMinutes
@@ -38,6 +76,15 @@ export default async function RoomPage({ params }: RoomPageProps) {
   let startedAtIso: string | null = interview.startedAt
     ? new Date(interview.startedAt).toISOString()
     : null;
+
+  if (interview.status === "scheduled" && (!hasValidSchedule || scheduledDate!.getTime() <= now.getTime())) {
+    const startTime = hasValidSchedule ? scheduledDate! : now;
+    startedAtIso = startTime.toISOString();
+    await Interviews.updateOne(
+      { roomId, status: "scheduled" },
+      { $set: { status: "started", startedAt: startTime } }
+    );
+  }
 
   if (interview.status === "created") {
     const now = new Date();
@@ -52,7 +99,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
     <div className="min-h-dvh bg-gradient-to-b from-white to-slate-50 dark:from-zinc-950 dark:to-zinc-900">
       <SiteHeader className="border-b border-transparent" />
 
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+      <main className="w-full px-4 py-8 sm:px-8 lg:px-10 2xl:px-16">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-zinc-50">

@@ -61,6 +61,7 @@ export type DbInterview = {
   candidateName?: string;
   durationMinutes?: number;
   createdAt: Date;
+  scheduledAt?: Date;
   startedAt?: Date;
   endedAt?: Date;
   status: DbInterviewStatus;

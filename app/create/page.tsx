@@ -14,6 +14,7 @@ export default function CreatePage() {
   const [isCreating, setIsCreating] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [durationMinutes, setDurationMinutes] = React.useState<string>("60");
+  const [scheduledAt, setScheduledAt] = React.useState<string>("");
 
   function parseDurationMinutes(input: string) {
     const n = Number(input);
@@ -33,10 +34,22 @@ export default function CreatePage() {
         return;
       }
 
+      const scheduledValue = scheduledAt.trim();
+      if (scheduledValue) {
+        const d = new Date(scheduledValue);
+        if (Number.isNaN(d.getTime())) {
+          setError("Please enter a valid scheduled date/time");
+          return;
+        }
+      }
+
       const res = await fetch("/api/create-room", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ durationMinutes: duration }),
+        body: JSON.stringify({
+          durationMinutes: duration,
+          scheduledAt: scheduledValue || undefined,
+        }),
       });
       const data = (await res.json()) as { roomId?: string; error?: string };
 
@@ -55,47 +68,60 @@ export default function CreatePage() {
 
   return (
     <div className="min-h-dvh bg-gradient-to-b from-white to-slate-50 dark:from-zinc-950 dark:to-zinc-900">
-      <div className="mx-auto w-full max-w-xl px-4 py-10 sm:px-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Create interview room</CardTitle>
-            <CardDescription>
-              Generate a unique room ID and invite your candidate via link.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-3">
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-medium text-slate-900 dark:text-zinc-50">
-                  Duration (minutes)
-                </span>
-                <Input
-                  value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(e.target.value)}
-                  placeholder="e.g. 60"
-                  inputMode="numeric"
-                />
-              </label>
+      <div className="w-full px-4 py-10 sm:px-8 lg:px-10 2xl:px-16">
+        <div className="mx-auto w-full max-w-xl">
+          <Card className="animate-fade-in hover-lift">
+            <CardHeader>
+              <CardTitle>Create interview room</CardTitle>
+              <CardDescription>
+                Generate a unique room ID and invite your candidate via link.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-3">
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-slate-900 dark:text-zinc-50">
+                    Duration (minutes)
+                  </span>
+                  <Input
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(e.target.value)}
+                    placeholder="e.g. 60"
+                    inputMode="numeric"
+                  />
+                </label>
 
-              <Button onClick={onCreate} disabled={isCreating}>
-                {isCreating ? "Creating..." : "Generate Room Link"}
-              </Button>
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-slate-900 dark:text-zinc-50">
+                    Schedule (optional)
+                  </span>
+                  <Input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    onChange={(e) => setScheduledAt(e.target.value)}
+                  />
+                </label>
 
-              {error ? (
-                <div className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700 ring-1 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-200 dark:ring-rose-900/60">
-                  {error}
-                </div>
-              ) : null}
+                <Button onClick={onCreate} disabled={isCreating}>
+                  {isCreating ? "Creating..." : "Generate Room Link"}
+                </Button>
 
-              <Link
-                href="/"
-                className="text-sm font-medium text-slate-700 hover:text-slate-950 dark:text-zinc-300 dark:hover:text-white"
-              >
-                Back to Home
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+                {error ? (
+                  <div className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700 ring-1 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-200 dark:ring-rose-900/60">
+                    {error}
+                  </div>
+                ) : null}
+
+                <Link
+                  href="/"
+                  className="text-sm font-medium text-slate-700 hover:text-slate-950 dark:text-zinc-300 dark:hover:text-white"
+                >
+                  Back to Home
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

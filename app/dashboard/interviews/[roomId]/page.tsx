@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth/next";
 
 import { NotesEditor } from "@/components/dashboard/notes-editor";
 import { RatingEditor } from "@/components/dashboard/rating-editor";
+import { DeleteRoomButton } from "@/components/dashboard/delete-room-button";
 import { SiteHeader } from "@/components/site/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { authOptions } from "@/lib/auth";
@@ -56,7 +57,7 @@ export default async function InterviewDetailPage({ params }: InterviewDetailPag
     <div className="min-h-dvh bg-gradient-to-b from-white to-slate-50 dark:from-zinc-950 dark:to-zinc-900">
       <SiteHeader className="border-b border-transparent" />
 
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+      <main className="w-full px-4 py-8 sm:px-8 lg:px-10 2xl:px-16">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-zinc-500">
@@ -86,6 +87,7 @@ export default async function InterviewDetailPage({ params }: InterviewDetailPag
             >
               Open room
             </Link>
+            <DeleteRoomButton roomId={roomId} variant="header" onDeletedHref="/dashboard" />
             <Link
               href={`/dashboard/interviews/${roomId}/report`}
               className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"

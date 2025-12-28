@@ -21,7 +21,7 @@ export const config = {
 export default function handler(req: NextApiRequest, res: NextApiResponseWithSocket) {
   if (!res.socket.server.peerServer) {
     res.socket.server.peerServer = ExpressPeerServer(res.socket.server, {
-      path: "/",
+      path: "/api/peerjs",
     });
   }
 

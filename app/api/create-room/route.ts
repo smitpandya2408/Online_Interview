@@ -15,6 +15,15 @@ function parseDurationMinutes(input: unknown) {
   return rounded;
 }
 
+function parseScheduledAt(input: unknown) {
+  if (typeof input !== "string") return null;
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  const d = new Date(trimmed);
+  if (Number.isNaN(d.getTime())) return null;
+  return d;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -27,8 +36,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const body = (await req.json().catch(() => ({}))) as { durationMinutes?: unknown };
+    const body = (await req.json().catch(() => ({}))) as {
+      durationMinutes?: unknown;
+      scheduledAt?: unknown;
+    };
     const durationMinutes = parseDurationMinutes(body.durationMinutes) ?? 60;
+
+    const scheduledAt = parseScheduledAt(body.scheduledAt);
+    const now = new Date();
+    const isScheduled = !!scheduledAt && scheduledAt.getTime() > now.getTime();
 
     const { Interviews } = await getMongoCollections();
     const roomId = nanoid(10);
@@ -37,7 +53,8 @@ export async function POST(req: NextRequest) {
       title: "Interview Session",
       durationMinutes,
       createdAt: new Date(),
-      status: "created" as const,
+      status: (isScheduled ? "scheduled" : "created") as "scheduled" | "created",
+      scheduledAt: isScheduled ? scheduledAt : undefined,
       code: "",
       language: "javascript" as const,
     };

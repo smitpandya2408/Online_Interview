@@ -28,7 +28,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(() => { try { const stored = localStorage.getItem('theme'); const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches; const theme = stored === 'light' || stored === 'dark' ? stored : (prefersDark ? 'dark' : 'light'); const root = document.documentElement; const isDark = theme === 'dark'; root.classList.toggle('dark', isDark); root.style.colorScheme = isDark ? 'dark' : 'light'; } catch {} })();",
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-dvh bg-white text-slate-950 antialiased dark:bg-zinc-950 dark:text-zinc-50`}
       >

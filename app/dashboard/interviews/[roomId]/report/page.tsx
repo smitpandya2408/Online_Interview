@@ -58,7 +58,7 @@ export default async function InterviewReportPage({ params }: InterviewReportPag
         <SiteHeader className="border-b border-transparent" />
       </div>
 
-      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 print:max-w-none print:px-0 print:py-0">
+      <main className="w-full px-4 py-8 sm:px-8 lg:px-10 2xl:px-16 print:max-w-none print:px-0 print:py-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between print:hidden">
           <div>
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-zinc-500">
