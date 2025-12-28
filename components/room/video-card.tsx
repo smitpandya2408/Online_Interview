@@ -339,6 +339,7 @@ export function VideoCard({ roomId }: VideoCardProps) {
               muted
               playsInline
               className={cn("h-full w-full object-cover", !camEnabled && "opacity-30")}
+              style={{ transform: "scaleX(-1)" }}
             />
             <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2 py-1 text-xs font-medium text-white">
               You

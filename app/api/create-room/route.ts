@@ -32,15 +32,16 @@ export async function POST(req: NextRequest) {
 
     const { Interviews } = await getMongoCollections();
     const roomId = nanoid(10);
-    await Interviews.insertOne({
+    const interviewDoc = {
       roomId,
       title: "Interview Session",
       durationMinutes,
       createdAt: new Date(),
-      status: "created",
+      status: "created" as const,
       code: "",
-      language: "javascript",
-    });
+      language: "javascript" as const,
+    };
+    await Interviews.insertOne(interviewDoc);
 
     return NextResponse.json({ roomId }, { status: 201 });
   } catch (err) {
