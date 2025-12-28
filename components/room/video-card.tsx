@@ -178,10 +178,6 @@ export function VideoCard({ roomId }: VideoCardProps) {
           if (!mounted) return;
           console.log("PeerJS connection closed");
         });
-          if (!mounted) return;
-          setStatus("Reconnecting...");
-          setReconnectKey((k) => k + 1);
-        });
 
         p.on("error", () => {
           if (!mounted) return;
