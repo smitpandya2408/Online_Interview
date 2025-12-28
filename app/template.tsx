@@ -3,51 +3,41 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-// --- Utility: Random number for organic counter ---
-const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min);
-
 type TemplateProps = {
   children: React.ReactNode;
 };
 
+const phases = [
+  { label: "BOOT", desc: "Initializing environment…" },
+  { label: "LINK", desc: "Establishing secure connection…" },
+  { label: "SYNC", desc: "Syncing user data…" },
+  { label: "READY", desc: "Welcome to InterviewOS." },
+];
+
 export default function Template({ children }: TemplateProps) {
   const [isLoading, setIsLoading] = React.useState(true);
-  const [count, setCount] = React.useState(0);
+  const [phaseIndex, setPhaseIndex] = React.useState(0);
 
-  // 1. Counter Logic
   React.useEffect(() => {
-    // Only run on client mount
-    if (typeof window === "undefined") return;
-
-    // Prevent scrolling while loading
     document.body.style.overflow = "hidden";
 
-    const duration = 2500; // Total load time in ms
-    const intervalTime = 20;
-    const steps = duration / intervalTime;
-    let currentStep = 0;
-
-    const timer = setInterval(() => {
-      currentStep++;
-      
-      // Calculate non-linear progress (starts fast, slows down at end)
-      const progress = easeOutCubic(currentStep / steps);
-      const newCount = Math.min(Math.round(progress * 100), 100);
-
-      setCount(newCount);
-
-      if (currentStep >= steps) {
-        clearInterval(timer);
-        // Small delay at 100% before lifting the curtain
-        setTimeout(() => {
+    const phaseDuration = 650;
+    const interval = setInterval(() => {
+      setPhaseIndex((prev) => {
+        if (prev >= phases.length - 1) {
+          clearInterval(interval);
+          setTimeout(() => {
             setIsLoading(false);
             document.body.style.overflow = "";
-        }, 400);
-      }
-    }, intervalTime);
+          }, 500);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, phaseDuration);
 
     return () => {
-      clearInterval(timer);
+      clearInterval(interval);
       document.body.style.overflow = "";
     };
   }, []);
@@ -55,115 +45,104 @@ export default function Template({ children }: TemplateProps) {
   return (
     <>
       <AnimatePresence mode="wait">
-        {isLoading && <Preloader count={count} />}
+        {isLoading && <Preloader phase={phases[phaseIndex]} index={phaseIndex} />}
       </AnimatePresence>
-      
-      {/* Content wrapper */}
-      <div className="relative z-0">
-          {children}
-      </div>
+
+      <div className="relative z-0">{children}</div>
     </>
   );
 }
 
-// --- Easing function for the counter ---
-function easeOutCubic(x: number): number {
-  return 1 - Math.pow(1 - x, 3);
-}
+/* ---------------- PRELOADER ---------------- */
 
-// --- The Main Loading Component ---
-function Preloader({ count }: { count: number }) {
-    // Dynamic messages based on percentage
-    const currentMessage = React.useMemo(() => {
-        if (count < 30) return "Initializing environment...";
-        if (count < 60) return "Establishing secure connection...";
-        if (count < 90) return "Syncing user data...";
-        return "Welcome to InterviewOS.";
-    }, [count]);
+function Preloader({
+  phase,
+  index,
+}: {
+  phase: { label: string; desc: string };
+  index: number;
+}) {
+  return (
+    <motion.div
+      className="fixed inset-0 z-[9999] flex flex-col justify-between bg-[#0f1011] px-6 py-8 md:px-12 md:py-12 text-zinc-50"
+      exit={{
+        y: "-100%",
+        transition: { duration: 0.9, ease: [0.76, 0, 0.24, 1] },
+      }}
+    >
+      {/* Noise */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+        }}
+      />
 
-    return (
-        <motion.div
-            className="fixed inset-0 z-[9999] flex flex-col items-center justify-between bg-[#0f1011] px-4 py-8 md:px-12 md:py-12 text-zinc-50"
-            exit={{ 
-                y: "-100%", 
-                transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] } // Custom Bezier for "Shutter" effect
-            }}
+      {/* Header */}
+      <div className="flex justify-between items-start text-xs font-mono uppercase tracking-widest text-zinc-500">
+        <span>InterviewOS</span>
+        <span>Session Init</span>
+      </div>
+
+      {/* CENTER */}
+      <div className="flex flex-col items-center justify-center text-center">
+        {/* Phase Code */}
+        <motion.h1
+          key={phase.label}
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -40 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="text-[10vh] md:text-[18vh] font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-600"
         >
-            {/* Background Noise Texture for premium feel */}
-            <div className="pointer-events-none absolute inset-0 opacity-[0.03]" 
-                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} 
-            />
+          {phase.label}
+          <span className="text-zinc-600 ml-3">/{String(index + 1).padStart(2, "0")}</span>
+        </motion.h1>
 
-            {/* Top Section: Logo / Header */}
-            <div className="w-full flex justify-between items-start opacity-0 animate-fade-in-down" style={{ animationFillMode: 'forwards', animationDelay: '0.2s' }}>
-                <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 bg-white rounded-full animate-pulse" />
-                    <span className="text-xs font-mono uppercase tracking-widest text-zinc-400">InterviewOS</span>
-                </div>
-                <div className="hidden md:block text-xs font-mono text-zinc-600">
-                    System v2.4.0
-                </div>
-            </div>
+        {/* Description */}
+        <motion.p
+          key={phase.desc}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -14 }}
+          transition={{ duration: 0.4 }}
+          className="mt-6 text-sm md:text-base text-zinc-400"
+        >
+          {phase.desc}
+        </motion.p>
+      </div>
 
-            {/* Middle Section: Big Counter & Message */}
-            <div className="relative w-full max-w-4xl flex flex-col items-center justify-center">
-                {/* The Huge Counter */}
-                <div className="relative">
-                    <motion.h1 
-                        className="text-[12vh] leading-[0.9] md:text-[22vh] font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-500"
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8 }}
-                    >
-                        {count}%
-                    </motion.h1>
-                    
-                    {/* Decorative Ring */}
-                    <svg className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] pointer-events-none opacity-20 animate-spin-slow" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 4" />
-                    </svg>
-                </div>
+      {/* SIGNAL LINE */}
+      <div className="w-full">
+        <div className="flex justify-between text-[10px] font-mono uppercase text-zinc-600 mb-2">
+          <span>System Signal</span>
+          <span>Active</span>
+        </div>
+        <div className="relative h-[2px] bg-zinc-800 overflow-hidden">
+          <motion.div
+            className="absolute inset-y-0 left-0 w-[30%] bg-white"
+            animate={{ x: ["-40%", "140%"] }}
+            transition={{
+              duration: 1.1,
+              ease: "easeInOut",
+              repeat: Infinity,
+            }}
+          />
+        </div>
+      </div>
 
-                {/* Status Message with Slide Up Animation */}
-                <div className="h-8 overflow-hidden mt-8 text-center">
-                    <motion.p 
-                        key={currentMessage} // Key change triggers animation
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: -20, opacity: 0 }}
-                        transition={{ duration: 0.35 }}
-                        className="text-sm md:text-base font-medium text-zinc-400"
-                    >
-                        {currentMessage}
-                    </motion.p>
-                </div>
-            </div>
-
-            {/* Bottom Section: Progress Bar */}
-            <div className="w-full flex flex-col gap-2">
-                <div className="flex justify-between text-[10px] uppercase font-mono text-zinc-500">
-                    <span>Loading Assets</span>
-                    <span>{count}/100</span>
-                </div>
-                <div className="h-[2px] w-full bg-zinc-800 relative overflow-hidden">
-                    <motion.div 
-                        className="absolute top-0 left-0 h-full bg-white"
-                        initial={{ width: "0%" }}
-                        animate={{ width: `${count}%` }}
-                        transition={{ ease: "linear", duration: 0.2 }} // Smooth update
-                    />
-                </div>
-            </div>
-            
-            {/* Secondary Layer for Parallax Exit Effect (The "Shadow" curtain) */}
-            <motion.div 
-                className="fixed inset-0 z-[-1] bg-zinc-900"
-                initial={{ y: 0 }}
-                exit={{ 
-                    y: "-100%", 
-                    transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1], delay: 0.1 } // Starts slightly later
-                }} 
-            />
-        </motion.div>
-    );
+      {/* Shadow Curtain */}
+      <motion.div
+        className="fixed inset-0 z-[-1] bg-zinc-900"
+        exit={{
+          y: "-100%",
+          transition: {
+            duration: 0.9,
+            delay: 0.1,
+            ease: [0.76, 0, 0.24, 1],
+          },
+        }}
+      />
+    </motion.div>
+  );
 }
