@@ -1,242 +1,169 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+
+// --- Utility: Random number for organic counter ---
+const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min);
 
 type TemplateProps = {
-    children: React.ReactNode;
+  children: React.ReactNode;
 };
 
 export default function Template({ children }: TemplateProps) {
-    const reduceMotion = useReducedMotion();
-    const [showFirstLoad, setShowFirstLoad] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [count, setCount] = React.useState(0);
 
-    const easeOutExpo: [number, number, number, number] = [0.16, 1, 0.3, 1];
-    const springSoft = reduceMotion
-        ? undefined
-        : {
-            type: "spring" as const,
-            stiffness: 160,
-            damping: 18,
-            mass: 0.9,
-        };
+  // 1. Counter Logic
+  React.useEffect(() => {
+    // Only run on client mount
+    if (typeof window === "undefined") return;
 
-    React.useEffect(() => {
-        setShowFirstLoad(true);
-    }, []);
+    // Prevent scrolling while loading
+    document.body.style.overflow = "hidden";
 
-    React.useEffect(() => {
-        if (!showFirstLoad) return;
-        const previous = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
-        return () => {
-            document.body.style.overflow = previous;
-        };
-    }, [showFirstLoad]);
+    const duration = 2500; // Total load time in ms
+    const intervalTime = 20;
+    const steps = duration / intervalTime;
+    let currentStep = 0;
 
-    React.useEffect(() => {
-        if (!showFirstLoad) return;
-        const id = window.setTimeout(() => {
-            setShowFirstLoad(false);
-        }, 2000);
-        return () => window.clearTimeout(id);
-    }, [showFirstLoad]);
+    const timer = setInterval(() => {
+      currentStep++;
+      
+      // Calculate non-linear progress (starts fast, slows down at end)
+      const progress = easeOutCubic(currentStep / steps);
+      const newCount = Math.min(Math.round(progress * 100), 100);
+
+      setCount(newCount);
+
+      if (currentStep >= steps) {
+        clearInterval(timer);
+        // Small delay at 100% before lifting the curtain
+        setTimeout(() => {
+            setIsLoading(false);
+            document.body.style.overflow = "";
+        }, 400);
+      }
+    }, intervalTime);
+
+    return () => {
+      clearInterval(timer);
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  return (
+    <>
+      <AnimatePresence mode="wait">
+        {isLoading && <Preloader count={count} />}
+      </AnimatePresence>
+      
+      {/* Content wrapper */}
+      <div className="relative z-0">
+          {children}
+      </div>
+    </>
+  );
+}
+
+// --- Easing function for the counter ---
+function easeOutCubic(x: number): number {
+  return 1 - Math.pow(1 - x, 3);
+}
+
+// --- The Main Loading Component ---
+function Preloader({ count }: { count: number }) {
+    // Dynamic messages based on percentage
+    const currentMessage = React.useMemo(() => {
+        if (count < 30) return "Initializing environment...";
+        if (count < 60) return "Establishing secure connection...";
+        if (count < 90) return "Syncing user data...";
+        return "Welcome to InterviewOS.";
+    }, [count]);
 
     return (
-        <>
-            <AnimatePresence>
-                {showFirstLoad ? (
-                    <motion.div
-                        key="first-load-overlay"
-                        className="fixed inset-0 z-[9999] overflow-hidden bg-gradient-to-b from-white to-slate-50 dark:from-zinc-950 dark:to-zinc-900"
-                        initial={{ opacity: 1 }}
-                        exit={
-                            reduceMotion
-                                ? { opacity: 0 }
-                                : {
-                                    opacity: 0,
-                                    filter: "blur(10px)",
-                                    transform: "scale(1.02)",
-                                    transition: { duration: 0.55, ease: easeOutExpo },
-                                }
-                        }
+        <motion.div
+            className="fixed inset-0 z-[9999] flex flex-col items-center justify-between bg-[#0f1011] px-4 py-8 md:px-12 md:py-12 text-zinc-50"
+            exit={{ 
+                y: "-100%", 
+                transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] } // Custom Bezier for "Shutter" effect
+            }}
+        >
+            {/* Background Noise Texture for premium feel */}
+            <div className="pointer-events-none absolute inset-0 opacity-[0.03]" 
+                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} 
+            />
+
+            {/* Top Section: Logo / Header */}
+            <div className="w-full flex justify-between items-start opacity-0 animate-fade-in-down" style={{ animationFillMode: 'forwards', animationDelay: '0.2s' }}>
+                <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 bg-white rounded-full animate-pulse" />
+                    <span className="text-xs font-mono uppercase tracking-widest text-zinc-400">InterviewOS</span>
+                </div>
+                <div className="hidden md:block text-xs font-mono text-zinc-600">
+                    System v2.4.0
+                </div>
+            </div>
+
+            {/* Middle Section: Big Counter & Message */}
+            <div className="relative w-full max-w-4xl flex flex-col items-center justify-center">
+                {/* The Huge Counter */}
+                <div className="relative">
+                    <motion.h1 
+                        className="text-[12vh] leading-[0.9] md:text-[22vh] font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-500"
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
                     >
-                        <div className="absolute inset-0">
-                            <motion.div
-                                className="absolute -left-40 top-[-120px] h-[420px] w-[420px] rounded-full bg-gradient-to-br from-slate-200 via-white to-slate-100 blur-3xl dark:from-zinc-800 dark:via-zinc-950 dark:to-zinc-900"
-                                animate={
-                                    reduceMotion
-                                        ? undefined
-                                        : {
-                                            y: [0, -14, 0],
-                                            x: [0, 12, 0],
-                                        }
-                                }
-                                transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut" }}
-                            />
-                            <motion.div
-                                className="absolute -right-40 bottom-[-140px] h-[460px] w-[460px] rounded-full bg-gradient-to-br from-slate-100 via-white to-slate-200 blur-3xl dark:from-zinc-900 dark:via-zinc-950 dark:to-zinc-800"
-                                animate={
-                                    reduceMotion
-                                        ? undefined
-                                        : {
-                                            y: [0, 16, 0],
-                                            x: [0, -10, 0],
-                                        }
-                                }
-                                transition={{ duration: 7.2, repeat: Infinity, ease: "easeInOut" }}
-                            />
+                        {count}%
+                    </motion.h1>
+                    
+                    {/* Decorative Ring */}
+                    <svg className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] pointer-events-none opacity-20 animate-spin-slow" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 4" />
+                    </svg>
+                </div>
 
-                            <motion.div
-                                className="absolute inset-0 opacity-[0.10] dark:opacity-[0.08]"
-                                animate={reduceMotion ? undefined : { opacity: [0.07, 0.12, 0.07] }}
-                                transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
-                                style={{
-                                    backgroundImage:
-                                        "radial-gradient(circle at 20% 10%, rgba(15,23,42,0.22), transparent 55%), radial-gradient(circle at 80% 70%, rgba(15,23,42,0.18), transparent 55%)",
-                                }}
-                                aria-hidden="true"
-                            />
-                        </div>
+                {/* Status Message with Slide Up Animation */}
+                <div className="h-8 overflow-hidden mt-8 text-center">
+                    <motion.p 
+                        key={currentMessage} // Key change triggers animation
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -20, opacity: 0 }}
+                        transition={{ duration: 0.35 }}
+                        className="text-sm md:text-base font-medium text-zinc-400"
+                    >
+                        {currentMessage}
+                    </motion.p>
+                </div>
+            </div>
 
-                        <div className="relative flex min-h-dvh items-center justify-center px-4 sm:px-8 lg:px-10 2xl:px-16">
-                            <div className="w-full max-w-md">
-                                <motion.div
-                                    initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 14, scale: 0.96 }}
-                                    animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-                                    transition={springSoft ?? { duration: 0.55, ease: easeOutExpo }}
-                                    className="relative mx-auto grid h-16 w-16 place-items-center"
-                                >
-                                    <motion.div
-                                        className="absolute inset-0 rounded-[22px]"
-                                        animate={
-                                            reduceMotion
-                                                ? undefined
-                                                : {
-                                                    rotate: 360,
-                                                }
-                                        }
-                                        transition={{ duration: 7.5, repeat: Infinity, ease: "linear" }}
-                                        style={{
-                                            background:
-                                                "conic-gradient(from 90deg, rgba(15,23,42,0.00), rgba(15,23,42,0.40), rgba(15,23,42,0.00))",
-                                            filter: "blur(0.2px)",
-                                        }}
-                                        aria-hidden="true"
-                                    />
-                                    <div className="relative grid h-14 w-14 place-items-center overflow-hidden rounded-2xl bg-slate-950 text-white shadow-sm ring-1 ring-slate-900/10 dark:bg-white dark:text-slate-950">
-                                        <motion.div
-                                            className="pointer-events-none absolute inset-0 opacity-50"
-                                            animate={
-                                                reduceMotion
-                                                    ? undefined
-                                                    : {
-                                                        x: ["-120%", "140%"],
-                                                    }
-                                            }
-                                            transition={{ duration: 1.35, repeat: Infinity, ease: "easeInOut" }}
-                                            style={{
-                                                background:
-                                                    "linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)",
-                                            }}
-                                            aria-hidden="true"
-                                        />
-                                        <span className="relative text-sm font-semibold">IO</span>
-                                    </div>
-                                </motion.div>
-
-                                <motion.div
-                                    className="mt-5 text-center"
-                                    initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
-                                    animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.06, duration: 0.6, ease: easeOutExpo }}
-                                >
-                                    <div className="text-sm font-semibold tracking-tight text-slate-950 dark:text-zinc-50">
-                                        <span className="relative inline-block">
-                                            InterviewOS
-                                            <motion.span
-                                                className="pointer-events-none absolute inset-y-0 -left-10 w-10 opacity-40"
-                                                animate={
-                                                    reduceMotion
-                                                        ? undefined
-                                                        : {
-                                                            x: [0, 240],
-                                                        }
-                                                }
-                                                transition={{ duration: 1.7, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.35 }}
-                                                style={{
-                                                    background:
-                                                        "linear-gradient(90deg, transparent, rgba(15,23,42,0.20), transparent)",
-                                                }}
-                                                aria-hidden="true"
-                                            />
-                                        </span>
-                                    </div>
-                                    <div className="mt-2 text-xs text-slate-600 dark:text-zinc-400">
-                                        Preparing your workspace…
-                                    </div>
-                                </motion.div>
-
-                                <motion.div
-                                    className="mt-8"
-                                    initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
-                                    animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.12, duration: 0.6, ease: easeOutExpo }}
-                                >
-                                    <div className="loader-bar h-2 w-full rounded-full bg-slate-200/70 ring-1 ring-slate-200 dark:bg-zinc-800/60 dark:ring-zinc-800" />
-
-                                    <motion.div
-                                        className="mt-6 grid gap-3"
-                                        initial="hidden"
-                                        animate="show"
-                                        variants={{
-                                            hidden: { opacity: 0 },
-                                            show: {
-                                                opacity: 1,
-                                                transition: reduceMotion
-                                                    ? { duration: 0 }
-                                                    : { staggerChildren: 0.08, delayChildren: 0.05 },
-                                            },
-                                        }}
-                                    >
-                                        {Array.from({ length: 3 }).map((_, idx) => (
-                                            <motion.div
-                                                key={idx}
-                                                variants={{
-                                                    hidden: { opacity: 0, y: 10 },
-                                                    show: { opacity: 1, y: 0 },
-                                                }}
-                                                className="loader-bar h-12 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 dark:bg-zinc-950 dark:ring-zinc-800"
-                                                aria-hidden="true"
-                                            />
-                                        ))}
-                                    </motion.div>
-
-                                    <motion.div
-                                        className="mt-6 flex items-center justify-center gap-2 text-[11px] font-medium text-slate-500 dark:text-zinc-500"
-                                        initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
-                                        animate={reduceMotion ? { opacity: 1 } : { opacity: 1 }}
-                                        transition={{ delay: 0.22, duration: 0.5, ease: easeOutExpo }}
-                                    >
-                                        <motion.span
-                                            className="h-1.5 w-1.5 rounded-full bg-slate-400/70 dark:bg-zinc-500/70"
-                                            animate={reduceMotion ? undefined : { scale: [1, 1.35, 1] }}
-                                            transition={{ duration: 1.0, repeat: Infinity, ease: "easeInOut" }}
-                                        />
-                                        <span>Secure rooms</span>
-                                        <span className="opacity-40">•</span>
-                                        <span>Real-time collaboration</span>
-                                        <span className="opacity-40">•</span>
-                                        <span>Reports</span>
-                                    </motion.div>
-                                </motion.div>
-                            </div>
-                        </div>
-                    </motion.div>
-                ) : null}
-            </AnimatePresence>
-
-            <div className="page-transition">{children}</div>
-        </>
+            {/* Bottom Section: Progress Bar */}
+            <div className="w-full flex flex-col gap-2">
+                <div className="flex justify-between text-[10px] uppercase font-mono text-zinc-500">
+                    <span>Loading Assets</span>
+                    <span>{count}/100</span>
+                </div>
+                <div className="h-[2px] w-full bg-zinc-800 relative overflow-hidden">
+                    <motion.div 
+                        className="absolute top-0 left-0 h-full bg-white"
+                        initial={{ width: "0%" }}
+                        animate={{ width: `${count}%` }}
+                        transition={{ ease: "linear", duration: 0.2 }} // Smooth update
+                    />
+                </div>
+            </div>
+            
+            {/* Secondary Layer for Parallax Exit Effect (The "Shadow" curtain) */}
+            <motion.div 
+                className="fixed inset-0 z-[-1] bg-zinc-900"
+                initial={{ y: 0 }}
+                exit={{ 
+                    y: "-100%", 
+                    transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1], delay: 0.1 } // Starts slightly later
+                }} 
+            />
+        </motion.div>
     );
 }
