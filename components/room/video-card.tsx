@@ -13,19 +13,23 @@ type VideoCardProps = {
 };
 
 function getPeerConfig() {
-  // Use PeerJS Cloud for production, fallback to self-hosted
-  if (window.location.hostname === "localhost") {
+  // Use PeerJS Cloud for production
+  const hostname = window.location.hostname;
+  const isLocalDev = hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168");
+  
+  if (isLocalDev) {
     // Local development - use self-hosted
     const isHttps = window.location.protocol === "https:";
     const port = window.location.port ? Number(window.location.port) : undefined;
     return {
-      host: window.location.hostname,
+      host: hostname,
       port,
       path: "/api/peerjs",
       secure: isHttps,
     };
   } else {
     // Production - use PeerJS Cloud (free public server)
+    console.log("Using PeerJS Cloud server for production");
     return {
       host: "0.peerjs.com",
       secure: true,
@@ -145,7 +149,9 @@ export function VideoCard({ roomId }: VideoCardProps) {
         // PeerJS now uses cloud server, no need to fetch endpoint
 
         const s = io({ path: "/api/socketio" });
-        const p = new Peer(getPeerConfig());
+        const peerConfig = getPeerConfig();
+        console.log("PeerJS config:", peerConfig);
+        const p = new Peer(peerConfig);
 
         p.on("open", (id) => {
           if (!mounted) return;
