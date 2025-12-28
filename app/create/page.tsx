@@ -7,18 +7,36 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 export default function CreatePage() {
   const router = useRouter();
   const [isCreating, setIsCreating] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [durationMinutes, setDurationMinutes] = React.useState<string>("60");
+
+  function parseDurationMinutes(input: string) {
+    const n = Number(input);
+    if (!Number.isFinite(n)) return null;
+    const rounded = Math.floor(n);
+    if (rounded < 1 || rounded > 480) return null;
+    return rounded;
+  }
 
   async function onCreate() {
     setError(null);
     setIsCreating(true);
     try {
+      const duration = parseDurationMinutes(durationMinutes);
+      if (!duration) {
+        setError("Please enter a valid duration (1-480 minutes)");
+        return;
+      }
+
       const res = await fetch("/api/create-room", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ durationMinutes: duration }),
       });
       const data = (await res.json()) as { roomId?: string; error?: string };
 
@@ -47,6 +65,18 @@ export default function CreatePage() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-3">
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-slate-900 dark:text-zinc-50">
+                  Duration (minutes)
+                </span>
+                <Input
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(e.target.value)}
+                  placeholder="e.g. 60"
+                  inputMode="numeric"
+                />
+              </label>
+
               <Button onClick={onCreate} disabled={isCreating}>
                 {isCreating ? "Creating..." : "Generate Room Link"}
               </Button>

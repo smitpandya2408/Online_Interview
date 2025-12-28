@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { getServerSession } from "next-auth/next";
 
@@ -7,7 +7,15 @@ import { nanoid } from "nanoid";
 import { authOptions } from "@/lib/auth";
 import { getMongoCollections } from "@/lib/db";
 
-export async function POST() {
+function parseDurationMinutes(input: unknown) {
+  const n = typeof input === "number" ? input : Number(input);
+  if (!Number.isFinite(n)) return null;
+  const rounded = Math.floor(n);
+  if (rounded < 1 || rounded > 480) return null;
+  return rounded;
+}
+
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -19,11 +27,15 @@ export async function POST() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const body = (await req.json().catch(() => ({}))) as { durationMinutes?: unknown };
+    const durationMinutes = parseDurationMinutes(body.durationMinutes) ?? 60;
+
     const { Interviews } = await getMongoCollections();
     const roomId = nanoid(10);
     await Interviews.insertOne({
       roomId,
       title: "Interview Session",
+      durationMinutes,
       createdAt: new Date(),
       status: "created",
       code: "",

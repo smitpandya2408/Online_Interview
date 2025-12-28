@@ -26,6 +26,15 @@ export default async function RoomPage({ params }: RoomPageProps) {
     notFound();
   }
 
+  if (interview.status === "ended") {
+    notFound();
+  }
+
+  const durationMinutes =
+    typeof interview.durationMinutes === "number" && Number.isFinite(interview.durationMinutes)
+      ? interview.durationMinutes
+      : 60;
+
   let startedAtIso: string | null = interview.startedAt
     ? new Date(interview.startedAt).toISOString()
     : null;
@@ -81,7 +90,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
           </div>
 
           <div className="flex flex-col gap-4">
-            <TimerCard startedAtIso={startedAtIso} />
+            <TimerCard roomId={roomId} startedAtIso={startedAtIso} durationMinutes={durationMinutes} />
             <NotesCard
               roomId={roomId}
               initialNotes={typeof interview.notes === "string" ? interview.notes : ""}

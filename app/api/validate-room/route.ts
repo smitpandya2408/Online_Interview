@@ -15,6 +15,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
+    if (interview.status === "ended") {
+      return NextResponse.json({ error: "Meeting ended" }, { status: 410 });
+    }
+
     return NextResponse.json({ roomId }, { status: 200 });
   } catch (err) {
     console.error("Failed to validate room:", err);

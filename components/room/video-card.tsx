@@ -19,13 +19,8 @@ function getPeerConfig() {
   
   if (isLocalDev) {
     // Local development - use self-hosted
-    const isHttps = window.location.protocol === "https:";
-    const port = window.location.port ? Number(window.location.port) : undefined;
     return {
-      host: hostname,
-      port,
       path: "/api/peerjs",
-      secure: isHttps,
     };
   } else {
     // Production - use PeerJS Cloud (free public server)
@@ -146,10 +141,12 @@ export function VideoCard({ roomId }: VideoCardProps) {
 
       try {
         await fetch("/api/socket");
-        // PeerJS now uses cloud server, no need to fetch endpoint
+        const peerConfig = getPeerConfig();
+        if (peerConfig.path === "/api/peerjs") {
+          await fetch("/api/peerjs");
+        }
 
         const s = io({ path: "/api/socketio" });
-        const peerConfig = getPeerConfig();
         console.log("PeerJS config:", peerConfig);
         const p = new Peer(peerConfig);
 
@@ -164,7 +161,10 @@ export function VideoCard({ roomId }: VideoCardProps) {
 
         p.on("error", (err) => {
           console.error("PeerJS error:", err);
-          setError(`PeerJS error: ${err}`);
+          const anyErr = err as unknown as { type?: unknown; message?: unknown };
+          const type = typeof anyErr?.type === "string" ? anyErr.type : null;
+          const message = typeof anyErr?.message === "string" ? anyErr.message : null;
+          setError(type ? `PeerJS error: ${type}` : message ? `PeerJS error: ${message}` : "PeerJS error");
         });
 
         p.on("disconnected", () => {
@@ -177,11 +177,6 @@ export function VideoCard({ roomId }: VideoCardProps) {
         p.on("close", () => {
           if (!mounted) return;
           console.log("PeerJS connection closed");
-        });
-
-        p.on("error", () => {
-          if (!mounted) return;
-          setError("Peer connection failed");
         });
 
         p.on("call", (call) => {

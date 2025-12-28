@@ -1,16 +1,4 @@
-import type { NextApiRequest } from "next";
-import type { NextApiResponse } from "next";
-import { Server as NetServer } from "http";
-
-import { ExpressPeerServer } from "peer";
-
-type NextApiResponseWithSocket = NextApiResponse & {
-  socket: {
-    server: NetServer & {
-      peerServer?: ReturnType<typeof ExpressPeerServer>;
-    };
-  };
-};
+import handler from "./peerjs/[...peerjs]";
 
 export const config = {
   api: {
@@ -18,12 +6,13 @@ export const config = {
   },
 };
 
-export default function handler(req: NextApiRequest, res: NextApiResponseWithSocket) {
-  if (!res.socket.server.peerServer) {
-    res.socket.server.peerServer = ExpressPeerServer(res.socket.server, {
-      path: "/api/peerjs",
-    });
+export default function (req: any, res: any) {
+  // PeerJS client may hit the exact /api/peerjs path; respond with a minimal 200 to avoid 404.
+  if (req.url === "/api/peerjs") {
+    res.setHeader("Content-Type", "text/plain");
+    res.status(200).send("PeerJS server running");
+    return;
   }
-
-  return res.socket.server.peerServer(req, res);
+  // Forward everything else to the catch-all PeerJS handler.
+  return handler(req, res);
 }
