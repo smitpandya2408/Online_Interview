@@ -59,6 +59,7 @@ export type DbInterview = {
   roomId: string;
   title?: string;
   candidateName?: string;
+  durationMinutes?: number;
   createdAt: Date;
   startedAt?: Date;
   endedAt?: Date;
