@@ -8,21 +8,29 @@ declare global {
   var mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-let clientPromise: Promise<MongoClient>;
+let clientPromise: Promise<MongoClient> | null = null;
 
-if (!MONGODB_URI) {
-  throw new Error("❌ Please define MONGODB_URI in .env.local");
-}
-
-if (process.env.NODE_ENV === "development") {
-  if (!global.mongoClientPromise) {
-    const client = new MongoClient(MONGODB_URI);
-    global.mongoClientPromise = client.connect();
+function getClientPromise(): Promise<MongoClient> {
+  if (clientPromise) {
+    return clientPromise;
   }
-  clientPromise = global.mongoClientPromise;
-} else {
-  const client = new MongoClient(MONGODB_URI);
-  clientPromise = client.connect();
+
+  if (!MONGODB_URI) {
+    throw new Error("❌ Please define MONGODB_URI in .env.local");
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    if (!global.mongoClientPromise) {
+      const client = new MongoClient(MONGODB_URI);
+      global.mongoClientPromise = client.connect();
+    }
+    clientPromise = global.mongoClientPromise;
+  } else {
+    const client = new MongoClient(MONGODB_URI);
+    clientPromise = client.connect();
+  }
+
+  return clientPromise;
 }
 
 /* ================= TYPES ================= */
@@ -92,7 +100,8 @@ export type MongoCollections = {
 /* ================= MAIN EXPORT ================= */
 
 export async function getMongoCollections(): Promise<MongoCollections> {
-  const client = await clientPromise;
+  const promise = getClientPromise();
+  const client = await promise;
   const db = client.db(DB_NAME);
 
   return {
