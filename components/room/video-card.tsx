@@ -77,7 +77,28 @@ export function VideoCard({ roomId }: VideoCardProps) {
     async function startMedia() {
       setError(null);
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        // Try with specific constraints first, then fallback to basic
+        let stream: MediaStream | null = null;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
+          });
+        } catch {
+          // Fallback to basic constraints
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          });
+        }
+
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
@@ -89,12 +110,15 @@ export function VideoCard({ roomId }: VideoCardProps) {
         const el = localVideoRef.current;
         if (el) {
           el.srcObject = stream;
-          await el.play().catch(() => undefined);
+          el.onloadedmetadata = () => {
+            el.play().catch(() => undefined);
+          };
         }
 
         setStatus("Ready");
-      } catch {
-        setError("Camera/microphone permission denied");
+      } catch (err) {
+        console.error("Media error:", err);
+        setError("Camera/microphone permission denied or not available");
         setStatus("Blocked");
       }
     }
@@ -125,19 +149,29 @@ export function VideoCard({ roomId }: VideoCardProps) {
 
         p.on("open", (id) => {
           if (!mounted) return;
+          console.log("PeerJS connected with ID:", id);
           setPeerId(id);
           selfPeerIdRef.current = id;
           s.emit("webrtc:register", { roomId, peerId: id });
           setStatus("Waiting for peer...");
         });
 
+        p.on("error", (err) => {
+          console.error("PeerJS error:", err);
+          setError(`PeerJS error: ${err}`);
+        });
+
         p.on("disconnected", () => {
           if (!mounted) return;
+          console.log("PeerJS disconnected, reconnecting...");
           setStatus("Reconnecting...");
           setReconnectKey((k) => k + 1);
         });
 
         p.on("close", () => {
+          if (!mounted) return;
+          console.log("PeerJS connection closed");
+        });
           if (!mounted) return;
           setStatus("Reconnecting...");
           setReconnectKey((k) => k + 1);
@@ -149,8 +183,10 @@ export function VideoCard({ roomId }: VideoCardProps) {
         });
 
         p.on("call", (call) => {
+          console.log("Incoming call from:", call.peer);
           const stream = localStreamRef.current;
           if (!stream) {
+            console.warn("No local stream available, closing call");
             call.close();
             return;
           }
@@ -160,15 +196,18 @@ export function VideoCard({ roomId }: VideoCardProps) {
 
           call.on("stream", (remoteStream) => {
             if (!mounted) return;
+            console.log("Received remote stream from:", call.peer);
             registerRemoteStream(call.peer, remoteStream);
           });
 
           call.on("close", () => {
+            console.log("Call closed with:", call.peer);
             connectionsRef.current.delete(call.peer);
             unregisterRemoteStream(call.peer);
           });
 
-          call.on("error", () => {
+          call.on("error", (err) => {
+            console.error("Call error with", call.peer, ":", err);
             connectionsRef.current.delete(call.peer);
             unregisterRemoteStream(call.peer);
           });
@@ -176,23 +215,39 @@ export function VideoCard({ roomId }: VideoCardProps) {
 
         function callPeer(targetPeerId: string) {
           const stream = localStreamRef.current;
-          if (!stream) return;
-          if (connectionsRef.current.has(targetPeerId)) return;
-          if (targetPeerId === selfPeerIdRef.current) return;
+          if (!stream) {
+            console.warn("No local stream, cannot call peer:", targetPeerId);
+            return;
+          }
+          if (connectionsRef.current.has(targetPeerId)) {
+            console.log("Already connected to peer:", targetPeerId);
+            return;
+          }
+          if (targetPeerId === selfPeerIdRef.current) {
+            console.log("Ignoring self peer");
+            return;
+          }
 
+          console.log("Calling peer:", targetPeerId);
           const call = p.call(targetPeerId, stream);
-          if (!call) return;
+          if (!call) {
+            console.error("Failed to initiate call to:", targetPeerId);
+            return;
+          }
 
           connectionsRef.current.set(targetPeerId, call);
           call.on("stream", (remoteStream) => {
             if (!mounted) return;
+            console.log("Got remote stream from outgoing call:", targetPeerId);
             registerRemoteStream(targetPeerId, remoteStream);
           });
           call.on("close", () => {
+            console.log("Call closed (outgoing) with:", targetPeerId);
             connectionsRef.current.delete(targetPeerId);
             unregisterRemoteStream(targetPeerId);
           });
-          call.on("error", () => {
+          call.on("error", (err) => {
+            console.error("Outgoing call error with", targetPeerId, ":", err);
             connectionsRef.current.delete(targetPeerId);
             unregisterRemoteStream(targetPeerId);
           });
