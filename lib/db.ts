@@ -1,11 +1,7 @@
 import { MongoClient, type Collection } from "mongodb";
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI || "";
 const DB_NAME = process.env.MONGODB_DB || "interviewos";
-
-if (!MONGODB_URI) {
-  throw new Error("❌ Please define MONGODB_URI in .env.local");
-}
 
 declare global {
   // eslint-disable-next-line no-var
@@ -13,6 +9,10 @@ declare global {
 }
 
 let clientPromise: Promise<MongoClient>;
+
+if (!MONGODB_URI) {
+  throw new Error("❌ Please define MONGODB_URI in .env.local");
+}
 
 if (process.env.NODE_ENV === "development") {
   if (!global.mongoClientPromise) {
