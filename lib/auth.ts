@@ -12,15 +12,21 @@ function parseRole(role: unknown): DbUserRole {
 console.log("NEXTAUTH_SECRET:", process.env.NEXTAUTH_SECRET ? "SET" : "NOT SET");
 console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
 
+// Fallback for production if environment variables are not set
+const secret = process.env.NEXTAUTH_SECRET || "test-secret-key-for-development-only-change-in-production";
+const nextAuthUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
+    maxAge: 24 * 60 * 60, // 24 hours
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: secret,
   debug: process.env.NODE_ENV === "development",
   pages: {
     signIn: "/login",
   },
+  useSecureCookies: false, // Disable secure cookies for localhost testing
   providers: [
     CredentialsProvider({
       name: "Credentials",

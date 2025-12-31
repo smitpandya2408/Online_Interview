@@ -7,6 +7,7 @@ import { EditorCard } from "@/components/room/editor-card";
 import { NotesCard } from "@/components/room/notes-card";
 import { TimerCard } from "@/components/room/timer-card";
 import { VideoCard } from "@/components/room/video-card";
+import { RecordingControls } from "@/components/room/recording-controls";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getMongoCollections } from "@/lib/db";
 
@@ -138,6 +139,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
 
           <div className="flex flex-col gap-4">
             <TimerCard roomId={roomId} startedAtIso={startedAtIso} durationMinutes={durationMinutes} />
+            <RecordingControls roomId={roomId} isAdmin={true} />
             <NotesCard
               roomId={roomId}
               initialNotes={typeof interview.notes === "string" ? interview.notes : ""}

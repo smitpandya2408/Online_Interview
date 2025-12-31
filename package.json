@@ -5,12 +5,13 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development next dev",
     "build": "cross-env NODE_ENV=production next build",
-    "start": "cross-env NODE_ENV=production next start",
+    "start": "cross-env NODE_ENV=production NEXTAUTH_SECRET=test-secret-key-for-development-only-change-in-production NEXTAUTH_URL=http://localhost:3000 MONGODB_URI=\"mongodb+srv://smitpandya3873:dell5559@cluster0.qa2vutd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0\" next start",
     "lint": "eslint"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.8.0",
     "framer-motion": "^11.18.2",
     "monaco-editor": "^0.55.1",
     "mongodb": "^7.0.0",

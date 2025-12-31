@@ -16,6 +16,13 @@ export interface IInterview extends Document {
   notes?: string;
   code?: string;
   language?: "javascript" | "python";
+  recording?: {
+    cloudinaryUrl?: string;
+    cloudinaryPublicId?: string;
+    duration?: number;
+    recordedAt?: Date;
+    recordedBy?: string;
+  };
 }
 
 const InterviewSchema: Schema = new Schema({
@@ -58,6 +65,13 @@ const InterviewSchema: Schema = new Schema({
     type: String,
     enum: ["javascript", "python"],
     default: "javascript",
+  },
+  recording: {
+    cloudinaryUrl: String,
+    cloudinaryPublicId: String,
+    duration: Number,
+    recordedAt: Date,
+    recordedBy: String,
   },
 });
 

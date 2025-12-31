@@ -46,10 +46,12 @@ function LoginForm() {
       } else if (result?.ok) {
         console.log("SIGNIN SUCCESS, REDIRECTING TO:", callbackUrl);
         console.log("CURRENT URL:", window.location.href);
-        // Force a hard redirect to ensure session is properly set
+        
+        // Wait a moment for session to be established, then redirect
         setTimeout(() => {
-          window.location.href = callbackUrl;
-        }, 100);
+          console.log("Attempting redirect to:", callbackUrl);
+          router.push(callbackUrl);
+        }, 500);
       } else {
         console.log("UNEXPECTED RESULT:", result);
         setError("An error occurred during login");
