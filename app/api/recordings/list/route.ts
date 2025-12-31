@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         cloudinaryPublicId: interview.recording?.cloudinaryPublicId,
         createdAt: interview.createdAt,
         status: interview.status,
-        participants: interview.participants,
+        participants: interview.participants || {},
       }))
     });
   } catch (error) {

@@ -16,7 +16,6 @@ export async function uploadVideo(buffer: Buffer, folder: string = 'interview-re
       {
         resource_type: 'video',
         folder,
-        format: 'mp4',
         quality: 'auto',
       },
       (error, result) => {

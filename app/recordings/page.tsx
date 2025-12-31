@@ -15,7 +15,7 @@ type Recording = {
   cloudinaryPublicId?: string;
   createdAt: string;
   status: string;
-  participants: {
+  participants?: {
     interviewer?: string;
     candidate?: string;
   };
@@ -157,8 +157,8 @@ export default function RecordingsPage() {
                         Participants
                       </div>
                       <div className="mt-1 text-sm text-slate-600 dark:text-zinc-400">
-                        <div>Interviewer: {recording.participants.interviewer || 'Not specified'}</div>
-                        <div>Candidate: {recording.participants.candidate || 'Not specified'}</div>
+                        <div>Interviewer: {recording.participants?.interviewer || 'Not specified'}</div>
+                        <div>Candidate: {recording.participants?.candidate || 'Not specified'}</div>
                       </div>
                     </div>
                   </div>

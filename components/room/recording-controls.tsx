@@ -44,6 +44,7 @@ export function RecordingControls({ roomId, isAdmin = false }: RecordingControls
   const chunksRef = React.useRef<Blob[]>([]);
   const startTimeRef = React.useRef<number>(0);
   const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const isRecordingRef = React.useRef(false);
 
   React.useEffect(() => {
     if (isRecording) {
@@ -116,7 +117,7 @@ export function RecordingControls({ roomId, isAdmin = false }: RecordingControls
       
       // Draw frames to canvas
       const drawFrame = () => {
-        if (!isRecording) return;
+        if (!isRecordingRef.current) return;
         
         // Clear canvas
         ctx.fillStyle = '#1e293b';
@@ -205,12 +206,26 @@ export function RecordingControls({ roomId, isAdmin = false }: RecordingControls
         requestAnimationFrame(drawFrame);
       };
       
-      drawFrame();
+      const pickMimeType = () => {
+        const candidates = [
+          "video/webm;codecs=vp9",
+          "video/webm;codecs=vp8",
+          "video/webm",
+        ];
+        for (const type of candidates) {
+          if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(type)) {
+            return type;
+          }
+        }
+        return undefined;
+      };
+
+      const mimeType = pickMimeType();
 
       // Create MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp9',
-      });
+      const mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
 
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
@@ -224,8 +239,16 @@ export function RecordingControls({ roomId, isAdmin = false }: RecordingControls
 
       mediaRecorder.onstop = async () => {
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+        if (!blob.size) {
+          setError("Recording produced no data. Please try again (ensure mic/camera are allowed).");
+          return;
+        }
         await uploadRecording(blob);
       };
+
+      isRecordingRef.current = true;
+      setIsRecording(true);
+      drawFrame();
 
       mediaRecorder.start(1000); // Collect data every second
       setIsRecording(true);
@@ -238,6 +261,7 @@ export function RecordingControls({ roomId, isAdmin = false }: RecordingControls
 
   const stopRecording = React.useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
+      isRecordingRef.current = false;
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
@@ -259,7 +283,14 @@ export function RecordingControls({ roomId, isAdmin = false }: RecordingControls
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        let message = "Upload failed";
+        try {
+          const data = await response.json();
+          if (data?.error) message = String(data.error);
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
       }
 
       const result = await response.json();
@@ -267,7 +298,7 @@ export function RecordingControls({ roomId, isAdmin = false }: RecordingControls
       
     } catch (err) {
       console.error('Upload error:', err);
-      setError('Failed to upload recording');
+      setError(err instanceof Error ? err.message : 'Failed to upload recording');
     } finally {
       setIsUploading(false);
     }

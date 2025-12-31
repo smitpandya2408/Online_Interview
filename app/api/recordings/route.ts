@@ -16,6 +16,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (typeof video.size === 'number' && video.size === 0) {
+      return NextResponse.json(
+        { error: 'Empty recording received (0 bytes). Please try recording again.' },
+        { status: 400 }
+      );
+    }
+
     const buffer = Buffer.from(await video.arrayBuffer());
     const uploadResult = await uploadVideo(buffer);
 
@@ -45,8 +52,14 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Upload error:', error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : 'Failed to upload recording';
     return NextResponse.json(
-      { error: 'Failed to upload recording' },
+      { error: message },
       { status: 500 }
     );
   }
