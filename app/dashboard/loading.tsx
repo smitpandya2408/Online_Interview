@@ -1,3 +1,5 @@
+// it is a loading page so please identigy easily
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Loading() {
