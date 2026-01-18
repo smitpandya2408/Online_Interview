@@ -96,6 +96,8 @@ export default async function RoomPage({ params }: RoomPageProps) {
     );
   }
 
+  const isMeeting = interview.title === "Meeting Session";
+
   return (
     <div className="min-h-dvh bg-gradient-to-b from-white to-slate-50 dark:from-zinc-950 dark:to-zinc-900">
       <SiteHeader className="border-b border-transparent" />
@@ -104,7 +106,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-zinc-50">
-              Interview Room
+              {isMeeting ? "Meeting Room" : "Interview Room"}
             </h1>
             <div className="mt-1 text-sm text-slate-600 dark:text-zinc-400">
               Room ID: <span className="font-mono font-medium">{roomId}</span>
@@ -130,11 +132,13 @@ export default async function RoomPage({ params }: RoomPageProps) {
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2 flex flex-col gap-4">
             <VideoCard roomId={roomId} />
-            <EditorCard
-              roomId={roomId}
-              initialCode={typeof interview.code === "string" ? interview.code : ""}
-              initialLanguage={interview.language === "python" ? "python" : "javascript"}
-            />
+            {!isMeeting && (
+              <EditorCard
+                roomId={roomId}
+                initialCode={typeof interview.code === "string" ? interview.code : ""}
+                initialLanguage={interview.language === "python" ? "python" : "javascript"}
+              />
+            )}
           </div>
 
           <div className="flex flex-col gap-4">
