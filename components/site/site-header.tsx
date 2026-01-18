@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/site/theme-toggle";
+import { CreateDropdown } from "@/components/site/create-dropdown";
 
 type SiteHeaderProps = {
   className?: string;
@@ -44,12 +45,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
               Security
             </Link>
 
-            <Link
-              href="/create"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-white"
-            >
-              Create
-            </Link>
+            <CreateDropdown />
             <Link
               href="/dashboard"
               className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-white"
