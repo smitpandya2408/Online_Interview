@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { SiteHeader } from "@/components/site/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -22,9 +23,13 @@ type Recording = {
 };
 
 export default function RecordingsPage() {
+  const { data: session } = useSession();
   const [recordings, setRecordings] = React.useState<Recording[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+
+  const isAdmin = session?.user?.role === 'admin';
 
   React.useEffect(() => {
     fetchRecordings();
@@ -60,6 +65,35 @@ export default function RecordingsPage() {
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Unknown';
     return new Date(dateString).toLocaleString();
+  };
+
+  const handleDeleteRecording = async (roomId: string) => {
+    if (!confirm('Are you sure you want to delete this recording? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setDeletingId(roomId);
+      setError(null);
+
+      const response = await fetch(`/api/recordings/delete?roomId=${roomId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete recording');
+      }
+
+      // Remove the deleted recording from the list
+      setRecordings(prev => prev.filter(rec => rec.roomId !== roomId));
+      
+    } catch (err) {
+      console.error('Delete error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete recording');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   if (loading) {
@@ -192,6 +226,15 @@ export default function RecordingsPage() {
                       >
                         Download Video
                       </a>
+                    )}
+                    {isAdmin && recording.cloudinaryUrl && (
+                      <button
+                        onClick={() => handleDeleteRecording(recording.roomId)}
+                        disabled={deletingId === recording.roomId}
+                        className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {deletingId === recording.roomId ? 'Deleting...' : 'Delete'}
+                      </button>
                     )}
                   </div>
                 </CardContent>

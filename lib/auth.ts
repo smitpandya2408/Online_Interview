@@ -10,7 +10,7 @@ function parseRole(role: unknown): DbUserRole {
 }
 
 console.log("NEXTAUTH_SECRET:", process.env.NEXTAUTH_SECRET ? "SET" : "NOT SET");
-console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
+console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL || "FALLBACK: http://localhost:3000");
 
 // Fallback for production if environment variables are not set
 const secret = process.env.NEXTAUTH_SECRET || "test-secret-key-for-development-only-change-in-production";
@@ -26,7 +26,7 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
-  useSecureCookies: false, // Disable secure cookies for localhost testing
+  useSecureCookies: process.env.NODE_ENV === "production", // Only use secure cookies in production
   providers: [
     CredentialsProvider({
       name: "Credentials",

@@ -4,15 +4,38 @@ import * as React from "react";
 import { Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
+function redirectTo(target: string) {
+  try {
+    if (typeof window !== "undefined" && window.top && window.top !== window.self) {
+      window.top.location.assign(target);
+      return;
+    }
+  } catch {
+    // ignore
+  }
+
+  window.location.assign(target);
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
+
   const callbackUrl = searchParams?.get("callbackUrl") || "/dashboard";
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      console.log("User already authenticated, redirecting to:", callbackUrl);
+      redirectTo(callbackUrl);
+    }
+  }, [status, session, callbackUrl, router]);
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -21,6 +44,10 @@ function LoginForm() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    console.log("=== FORM SUBMITTED ===");
+    console.log("Email:", email);
+    console.log("Password provided:", password ? "YES" : "NO");
+    
     setError(null);
     setLoading(true);
 
@@ -44,14 +71,12 @@ function LoginForm() {
         console.log("SIGNIN ERROR:", result.error);
         setError("Invalid email or password");
       } else if (result?.ok) {
-        console.log("SIGNIN SUCCESS, REDIRECTING TO:", callbackUrl);
-        console.log("CURRENT URL:", window.location.href);
-        
-        // Wait a moment for session to be established, then redirect
-        setTimeout(() => {
-          console.log("Attempting redirect to:", callbackUrl);
-          router.push(callbackUrl);
-        }, 500);
+        console.log("SIGNIN SUCCESS");
+        console.log("About to redirect to:", callbackUrl);
+
+        console.log("Redirecting now to: /dashboard");
+        redirectTo("/dashboard");
+        return;
       } else {
         console.log("UNEXPECTED RESULT:", result);
         setError("An error occurred during login");
@@ -62,6 +87,15 @@ function LoginForm() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Show loading while checking authentication
+  if (status === "loading") {
+    return (
+      <div className="min-h-dvh bg-gradient-to-b from-white to-slate-50 dark:from-zinc-950 dark:to-zinc-900 flex items-center justify-center">
+        <div className="text-lg">Checking authentication...</div>
+      </div>
+    );
   }
 
   return (

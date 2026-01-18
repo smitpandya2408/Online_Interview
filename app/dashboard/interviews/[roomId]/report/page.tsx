@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { getServerSession } from "next-auth/next";
+import { getServerSession } from "next-auth";
 
 import { PrintButton } from "@/components/dashboard/print-button";
 import { SiteHeader } from "@/components/site/site-header";

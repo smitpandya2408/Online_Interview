@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +9,10 @@ type RecordingControlsProps = {
   roomId: string;
   isAdmin?: boolean;
 };
+
+function canRecord(role: unknown) {
+  return role === "admin" || role === "interviewer";
+}
 
 function RecordIcon() {
   return (
@@ -34,11 +39,15 @@ function RecordingIndicator() {
   );
 }
 
-export function RecordingControls({ roomId, isAdmin = false }: RecordingControlsProps) {
+export function RecordingControls({ roomId }: RecordingControlsProps) {
+  const { data: session } = useSession();
   const [isRecording, setIsRecording] = React.useState(false);
   const [recordingTime, setRecordingTime] = React.useState(0);
   const [isUploading, setIsUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  
+  const userRole = session?.user?.role;
+  const canUserRecord = canRecord(userRole);
   
   const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
   const chunksRef = React.useRef<Blob[]>([]);
@@ -76,140 +85,63 @@ export function RecordingControls({ roomId, isAdmin = false }: RecordingControls
     try {
       setError(null);
       
-      // Get all video elements and cast them properly
-      const videoElements = Array.from(document.querySelectorAll('video')) as HTMLVideoElement[];
-      if (videoElements.length === 0) {
-        setError('No video streams available to record');
+      // Request screen recording permission
+      let screenStream: MediaStream;
+      try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: true
+        });
+      } catch (err) {
+        setError('Screen recording permission denied. Please allow screen access.');
         return;
       }
 
-      // Create a canvas to combine video streams
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        setError('Failed to initialize recording canvas');
-        return;
-      }
-
-      // Set canvas size for landscape recording
-      canvas.width = 1280;
-      canvas.height = 720;
-
-      // Create a stream from the canvas
-      const stream = canvas.captureStream(30); // 30 FPS
-      
-      // Add audio from the first available video stream
-      let audioTrack: MediaStreamTrack | null = null;
-      for (const video of videoElements) {
-        const mediaStream = video.srcObject as MediaStream;
-        if (mediaStream) {
-          const audioTracks = mediaStream.getAudioTracks();
-          if (audioTracks.length > 0) {
-            audioTrack = audioTracks[0];
-            break;
-          }
-        }
-      }
-      
-      if (audioTrack) {
-        stream.addTrack(audioTrack);
-      }
-      
-      // Draw frames to canvas
-      const drawFrame = () => {
-        if (!isRecordingRef.current) return;
-        
-        // Clear canvas
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Layout: Main video takes 2/3 width, local video takes 1/3
-        const mainWidth = canvas.width * 0.67;
-        const mainHeight = canvas.height;
-        const localWidth = canvas.width * 0.33;
-        const localHeight = canvas.height * 0.33;
-        
-        // Find the main remote video (first video that's not the local one)
-        let mainVideo: HTMLVideoElement | null = null;
-        let localVideo: HTMLVideoElement | null = null;
-        
-        videoElements.forEach((video: HTMLVideoElement) => {
-          // Check if this is the local video (usually has muted attribute)
-          if (video.muted && video.classList.contains('object-cover')) {
-            localVideo = video;
-          } else if (!mainVideo && (video as any).readyState >= 2) {
-            mainVideo = video;
+      // Get microphone audio for narration
+      let audioStream: MediaStream | null = null;
+      try {
+        audioStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            sampleRate: 44100
           }
         });
-        
-        // If no remote video, use local video as main
-        if (!mainVideo && localVideo) {
-          mainVideo = localVideo;
-          localVideo = null;
+      } catch (err) {
+        console.warn('Microphone access denied, recording without audio');
+      }
+
+      // Combine screen and audio streams
+      const combinedStream = new MediaStream();
+      
+      // Add video tracks from screen
+      screenStream.getVideoTracks().forEach(track => {
+        combinedStream.addTrack(track);
+      });
+      
+      // Add audio tracks
+      if (audioStream) {
+        audioStream.getAudioTracks().forEach(track => {
+          combinedStream.addTrack(track);
+        });
+      } else {
+        // Try to get audio from screen stream if available
+        screenStream.getAudioTracks().forEach(track => {
+          combinedStream.addTrack(track);
+        });
+      }
+
+      // Handle screen sharing end
+      screenStream.getVideoTracks()[0].addEventListener('ended', () => {
+        if (isRecordingRef.current) {
+          stopRecording();
         }
-        
-        // Draw main video
-        if (mainVideo && (mainVideo as any).readyState >= 2) {
-          ctx.drawImage(mainVideo, 0, 0, mainWidth, mainHeight);
-        } else {
-          // Placeholder for main video
-          ctx.fillStyle = '#475569';
-          ctx.fillRect(0, 0, mainWidth, mainHeight);
-          ctx.fillStyle = '#94a3b8';
-          ctx.font = '24px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('Main Video', mainWidth / 2, mainHeight / 2);
-        }
-        
-        // Draw local video in corner
-        if (localVideo && (localVideo as any).readyState >= 2) {
-          const localX = canvas.width - localWidth - 20;
-          const localY = canvas.height - localHeight - 20;
-          
-          // Add border around local video
-          ctx.strokeStyle = '#3b82f6';
-          ctx.lineWidth = 3;
-          ctx.strokeRect(localX - 2, localY - 2, localWidth + 4, localHeight + 4);
-          
-          ctx.drawImage(localVideo, localX, localY, localWidth, localHeight);
-        } else if (localVideo) {
-          // Placeholder for local video
-          const localX = canvas.width - localWidth - 20;
-          const localY = canvas.height - localHeight - 20;
-          
-          ctx.fillStyle = '#1e293b';
-          ctx.fillRect(localX, localY, localWidth, localHeight);
-          ctx.strokeStyle = '#3b82f6';
-          ctx.lineWidth = 3;
-          ctx.strokeRect(localX - 2, localY - 2, localWidth + 4, localHeight + 4);
-          
-          ctx.fillStyle = '#94a3b8';
-          ctx.font = '16px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('You', localX + localWidth / 2, localY + localHeight / 2);
-        }
-        
-        // Add timestamp
-        const now = new Date();
-        const timestamp = now.toLocaleTimeString();
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '14px monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(timestamp, 10, 25);
-        
-        // Add recording indicator
-        ctx.fillStyle = '#ef4444';
-        ctx.beginPath();
-        ctx.arc(canvas.width - 20, 20, 6, 0, 2 * Math.PI);
-        ctx.fill();
-        
-        requestAnimationFrame(drawFrame);
-      };
+      });
       
       const pickMimeType = () => {
         const candidates = [
           "video/webm;codecs=vp9",
-          "video/webm;codecs=vp8",
+          "video/webm;codecs=vp8", 
           "video/webm",
         ];
         for (const type of candidates) {
@@ -222,10 +154,10 @@ export function RecordingControls({ roomId, isAdmin = false }: RecordingControls
 
       const mimeType = pickMimeType();
 
-      // Create MediaRecorder
+      // Create MediaRecorder with combined stream
       const mediaRecorder = mimeType
-        ? new MediaRecorder(stream, { mimeType })
-        : new MediaRecorder(stream);
+        ? new MediaRecorder(combinedStream, { mimeType })
+        : new MediaRecorder(combinedStream);
 
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
@@ -238,9 +170,15 @@ export function RecordingControls({ roomId, isAdmin = false }: RecordingControls
       };
 
       mediaRecorder.onstop = async () => {
+        // Stop all tracks
+        screenStream.getTracks().forEach(track => track.stop());
+        if (audioStream) {
+          audioStream.getTracks().forEach(track => track.stop());
+        }
+        
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
         if (!blob.size) {
-          setError("Recording produced no data. Please try again (ensure mic/camera are allowed).");
+          setError("Recording produced no data. Please try again.");
           return;
         }
         await uploadRecording(blob);
@@ -248,10 +186,7 @@ export function RecordingControls({ roomId, isAdmin = false }: RecordingControls
 
       isRecordingRef.current = true;
       setIsRecording(true);
-      drawFrame();
-
       mediaRecorder.start(1000); // Collect data every second
-      setIsRecording(true);
       
     } catch (err) {
       console.error('Recording error:', err);
@@ -275,7 +210,7 @@ export function RecordingControls({ roomId, isAdmin = false }: RecordingControls
       const formData = new FormData();
       formData.append('video', blob, `recording-${roomId}-${Date.now()}.webm`);
       formData.append('roomId', roomId);
-      formData.append('recordedBy', 'admin');
+      formData.append('recordedBy', userRole as string || 'admin');
 
       const response = await fetch('/api/recordings', {
         method: 'POST',
@@ -304,7 +239,7 @@ export function RecordingControls({ roomId, isAdmin = false }: RecordingControls
     }
   };
 
-  if (!isAdmin) {
+  if (!canUserRecord) {
     return null;
   }
 

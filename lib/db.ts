@@ -73,6 +73,13 @@ export type DbInterview = {
   rating?: number;
   code?: string;
   language?: "javascript" | "python";
+  recording?: {
+    cloudinaryUrl?: string;
+    cloudinaryPublicId?: string;
+    duration?: number;
+    recordedAt?: Date;
+    recordedBy?: string;
+  };
 };
 
 export type DbMessage = {

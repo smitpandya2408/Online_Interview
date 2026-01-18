@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getServerSession } from "next-auth/next";
+import { getServerSession } from "next-auth";
 
 import { nanoid } from "nanoid";
 

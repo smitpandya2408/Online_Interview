@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { getServerSession } from "next-auth/next";
+import { getServerSession } from "next-auth";
 
 import { NotesEditor } from "@/components/dashboard/notes-editor";
 import { RatingEditor } from "@/components/dashboard/rating-editor";

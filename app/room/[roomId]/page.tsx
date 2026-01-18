@@ -139,7 +139,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
 
           <div className="flex flex-col gap-4">
             <TimerCard roomId={roomId} startedAtIso={startedAtIso} durationMinutes={durationMinutes} />
-            <RecordingControls roomId={roomId} isAdmin={true} />
+            <RecordingControls roomId={roomId} />
             <NotesCard
               roomId={roomId}
               initialNotes={typeof interview.notes === "string" ? interview.notes : ""}
