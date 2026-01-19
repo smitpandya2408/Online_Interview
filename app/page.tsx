@@ -317,7 +317,7 @@ export default function Home() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:bg-zinc-900/40 dark:text-zinc-500">
                   <tr>
-                    <th className="px-4 py-3"><Capabilityies></Capabilityies></th>
+                    <th className="px-4 py-3">Capabilities</th>
                     <th className="px-4 py-3">Generic video call</th>
                     <th className="px-4 py-3">InterviewOS</th>
                   </tr>
