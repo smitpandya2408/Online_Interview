@@ -36,8 +36,16 @@ export default function Template({ children }: TemplateProps) {
       });
     }, phaseDuration);
 
+    // Fallback timeout to prevent infinite loading
+    const fallbackTimeout = setTimeout(() => {
+      setIsLoading(false);
+      document.body.style.overflow = "";
+      clearInterval(interval);
+    }, 5000);
+
     return () => {
       clearInterval(interval);
+      clearTimeout(fallbackTimeout);
       document.body.style.overflow = "";
     };
   }, []);
