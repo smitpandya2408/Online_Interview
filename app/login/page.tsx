@@ -102,11 +102,11 @@ function LoginForm() {
     }
   }
 
-  // Show loading while checking authentication
+  // Show minimal loading while checking authentication
   if (status === "loading") {
     return (
       <div className="min-h-dvh bg-gradient-to-b from-white to-slate-50 dark:from-zinc-950 dark:to-zinc-900 flex items-center justify-center">
-        <div className="text-lg">Checking authentication...</div>
+        <div className="text-sm text-slate-500">Loading...</div>
       </div>
     );
   }
