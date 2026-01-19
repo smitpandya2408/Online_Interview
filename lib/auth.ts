@@ -14,7 +14,7 @@ console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL || "FALLBACK: http://local
 
 // Fallback for production if environment variables are not set
 const secret = process.env.NEXTAUTH_SECRET || "test-secret-key-for-development-only-change-in-production";
-const nextAuthUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+const nextAuthUrl = process.env.NEXTAUTH_URL || (process.env.NODE_ENV === "production" ? undefined : "http://localhost:3000");
 
 export const authOptions: NextAuthOptions = {
   session: {
