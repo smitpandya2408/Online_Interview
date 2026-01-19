@@ -27,6 +27,19 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
 
+  // Suppress NextAuth session event logs in production
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") {
+      const originalLog = console.log;
+      console.log = (...args) => {
+        if (typeof args[0] === "string" && args[0].includes("session") && args[0].includes("trigger")) {
+          return; // Suppress session event logs
+        }
+        originalLog.apply(console, args);
+      };
+    }
+  }, []);
+
   const callbackUrl = searchParams?.get("callbackUrl")?.replace(/^@/, "") || "/dashboard";
 
   // Redirect if already authenticated
