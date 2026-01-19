@@ -27,7 +27,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
 
-  const callbackUrl = searchParams?.get("callbackUrl") || "/dashboard";
+  const callbackUrl = searchParams?.get("callbackUrl")?.replace(/^@/, "") || "/dashboard";
 
   // Redirect if already authenticated
   React.useEffect(() => {
