@@ -15,50 +15,8 @@ const phases = [
 ];
 
 export default function Template({ children }: TemplateProps) {
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [phaseIndex, setPhaseIndex] = React.useState(0);
-
-  React.useEffect(() => {
-    document.body.style.overflow = "hidden";
-
-    const phaseDuration = 650;
-    const interval = setInterval(() => {
-      setPhaseIndex((prev) => {
-        if (prev >= phases.length - 1) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setIsLoading(false);
-            document.body.style.overflow = "";
-          }, 500);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, phaseDuration);
-
-    // Fallback timeout to prevent infinite loading
-    const fallbackTimeout = setTimeout(() => {
-      setIsLoading(false);
-      document.body.style.overflow = "";
-      clearInterval(interval);
-    }, 5000);
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(fallbackTimeout);
-      document.body.style.overflow = "";
-    };
-  }, []);
-
-  return (
-    <>
-      <AnimatePresence mode="wait">
-        {isLoading && <Preloader phase={phases[phaseIndex]} index={phaseIndex} />}
-      </AnimatePresence>
-
-      <div className="relative z-0">{children}</div>
-    </>
-  );
+  // Temporarily disable preloader to fix loading issue
+  return <div className="relative z-0">{children}</div>;
 }
 
 /* ---------------- PRELOADER ---------------- */
