@@ -22,7 +22,7 @@ export const authOptions: NextAuthOptions = {
     maxAge: 24 * 60 * 60, // 24 hours
   },
   secret: secret,
-  debug: process.env.NODE_ENV === "development",
+  debug: false, // Disable debug in production to reduce console noise
   pages: {
     signIn: "/login",
   },
