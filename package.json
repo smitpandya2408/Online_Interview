@@ -8,7 +8,8 @@
     "start": "cross-env NODE_ENV=production NEXTAUTH_SECRET=test-secret-key-for-development-only-change-in-production MONGODB_URI=\"mongodb+srv://smitpandya3873:dell5559@cluster0.qa2vutd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0\" CLOUDINARY_API_KEY=344693685751171 CLOUDINARY_CLOUD_NAME=dabkd0996 CLOUDINARY_API_SECRET=1lO7mdQHsqmvgys8nxx6ibtD6DY next start",
     "lint": "eslint",
     "postinstall": "next build",
-    "install:prod": "npm install --omit=dev"
+    "install:prod": "npm install --omit=dev",
+    "install:production": "npm install --omit=dev"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
