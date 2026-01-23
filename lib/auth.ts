@@ -14,7 +14,6 @@ console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL || "FALLBACK: http://local
 
 // Fallback for production if environment variables are not set
 const secret = process.env.NEXTAUTH_SECRET || "test-secret-key-for-development-only-change-in-production";
-const nextAuthUrl = process.env.NEXTAUTH_URL || (process.env.NODE_ENV === "production" ? undefined : "http://localhost:3000");
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -45,17 +44,6 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Temporary hardcoded admin for testing
-        if (email === "admin@gmail.com" && password === "admin123") {
-          console.log("HARDCODED ADMIN LOGIN SUCCESSFUL");
-          return {
-            id: "1",
-            email: "admin@gmail.com",
-            name: "Admin",
-            role: "admin",
-          };
-        }
-        
         console.log("NO MATCH FOUND");
 
         const { Users } = await getMongoCollections();
@@ -95,6 +83,16 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      try {
+        const parsed = new URL(url);
+        if (parsed.origin === baseUrl) return url;
+      } catch {
+        // ignore
+      }
+      return `${baseUrl}/dashboard`;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role;
