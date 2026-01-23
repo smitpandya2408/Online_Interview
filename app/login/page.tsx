@@ -3,8 +3,8 @@
 import * as React from "react";
 import { Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
+import { getSession, signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -86,7 +86,32 @@ function LoginForm() {
         console.log("SIGNIN SUCCESS");
         console.log("About to redirect to:", callbackUrl);
 
-        const nextUrl = result.url || callbackUrl || "/dashboard";
+        try {
+          await getSession();
+        } catch {
+          // ignore
+        }
+
+        const pickRedirectTarget = () => {
+          const fallback = callbackUrl || "/dashboard";
+          const candidate = result.url;
+
+          if (!candidate) return fallback;
+          if (candidate.startsWith("/")) return candidate;
+
+          try {
+            const parsed = new URL(candidate);
+            if (typeof window !== "undefined" && parsed.origin === window.location.origin) {
+              return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+            }
+          } catch {
+            // ignore
+          }
+
+          return fallback;
+        };
+
+        const nextUrl = pickRedirectTarget();
         console.log("Redirecting now to:", nextUrl);
         redirectTo(nextUrl);
         return;
