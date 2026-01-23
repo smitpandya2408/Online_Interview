@@ -10,9 +10,18 @@ type SessionUser = {
     name?: string | null;
 };
 
+type InterviewListItem = {
+    _id?: unknown;
+    roomId: string;
+    title?: string;
+    status?: unknown;
+    createdAt: Date | string | number;
+    scheduledAt?: Date | string | number;
+};
+
 type AdminDashboardUIProps = {
     user: SessionUser;
-    interviews: any[];
+    interviews: InterviewListItem[];
     statusFilter: string;
     totalInterviews: number;
     scheduledCount: number;
@@ -30,7 +39,7 @@ function toUiStatus(status: unknown) {
     return "scheduled";
 }
 
-function formatScheduledOrCreated(i: any) {
+function formatScheduledOrCreated(i: InterviewListItem) {
     const status = i?.status;
     const scheduledAt = i?.scheduledAt;
     if ((status === "scheduled" || status === "created") && scheduledAt) {

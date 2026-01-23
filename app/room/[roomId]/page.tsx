@@ -32,7 +32,12 @@ export default async function RoomPage({ params }: RoomPageProps) {
   }
 
   const scheduledAt = (interview as unknown as { scheduledAt?: unknown }).scheduledAt;
-  const scheduledDate = scheduledAt ? new Date(scheduledAt as any) : null;
+  const scheduledDate =
+    scheduledAt instanceof Date
+      ? scheduledAt
+      : typeof scheduledAt === "string" || typeof scheduledAt === "number"
+        ? new Date(scheduledAt)
+        : null;
   const hasValidSchedule = !!scheduledDate && !Number.isNaN(scheduledDate.getTime());
   const now = new Date();
 

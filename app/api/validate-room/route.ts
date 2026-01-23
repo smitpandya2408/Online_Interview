@@ -21,7 +21,15 @@ export async function POST(req: NextRequest) {
 
     const scheduledAt = (interview as unknown as { scheduledAt?: unknown }).scheduledAt;
     if (scheduledAt) {
-      const scheduledDate = new Date(scheduledAt as any);
+      const scheduledDate =
+        scheduledAt instanceof Date
+          ? scheduledAt
+          : typeof scheduledAt === "string" || typeof scheduledAt === "number"
+            ? new Date(scheduledAt)
+            : null;
+      if (!scheduledDate) {
+        return NextResponse.json({ roomId }, { status: 200 });
+      }
       if (!Number.isNaN(scheduledDate.getTime())) {
         const now = new Date();
         const status = (interview as unknown as { status?: unknown }).status;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getMongoCollections } from '@/lib/db';
+import { getMongoCollections, type DbInterview } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      recordings: recordedInterviews.map((interview: any) => ({
+      recordings: (recordedInterviews as DbInterview[]).map((interview) => ({
         roomId: interview.roomId,
         title: interview.title,
         recordedAt: interview.recording?.recordedAt,
