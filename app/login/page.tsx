@@ -23,7 +23,6 @@ function redirectTo(target: string) {
 }
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
 
@@ -48,7 +47,7 @@ function LoginForm() {
       console.log("User already authenticated, redirecting to:", callbackUrl);
       redirectTo(callbackUrl);
     }
-  }, [status, session, callbackUrl, router]);
+  }, [status, session, callbackUrl]);
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -87,8 +86,9 @@ function LoginForm() {
         console.log("SIGNIN SUCCESS");
         console.log("About to redirect to:", callbackUrl);
 
-        console.log("Redirecting now to: /dashboard");
-        redirectTo("/dashboard");
+        const nextUrl = result.url || callbackUrl || "/dashboard";
+        console.log("Redirecting now to:", nextUrl);
+        redirectTo(nextUrl);
         return;
       } else {
         console.log("UNEXPECTED RESULT:", result);
