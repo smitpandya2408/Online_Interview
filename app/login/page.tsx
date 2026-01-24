@@ -22,6 +22,33 @@ function redirectTo(target: string) {
   window.location.assign(target);
 }
 
+function sanitizeCallbackUrl(raw: string | null | undefined) {
+  const fallback = "/dashboard";
+  if (!raw) return fallback;
+
+  const cleaned = raw.replace(/^@/, "").trim();
+  if (!cleaned) return fallback;
+
+  let path = "";
+  if (cleaned.startsWith("/")) {
+    path = cleaned;
+  } else {
+    try {
+      const parsed = new URL(cleaned);
+      if (typeof window !== "undefined" && parsed.origin === window.location.origin) {
+        path = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      } else {
+        return fallback;
+      }
+    } catch {
+      return fallback;
+    }
+  }
+
+  if (path.startsWith("/login") || path.startsWith("/api/auth")) return fallback;
+  return path;
+}
+
 function LoginForm() {
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
@@ -39,7 +66,7 @@ function LoginForm() {
     }
   }, []);
 
-  const callbackUrl = searchParams?.get("callbackUrl")?.replace(/^@/, "") || "/dashboard";
+  const callbackUrl = sanitizeCallbackUrl(searchParams?.get("callbackUrl"));
 
   // Redirect if already authenticated
   React.useEffect(() => {
@@ -87,34 +114,16 @@ function LoginForm() {
         console.log("About to redirect to:", callbackUrl);
 
         try {
-          await getSession();
+          const nextSession = await getSession();
+          if (!nextSession?.user) {
+            setError("Login succeeded but a session was not established. Please check NEXTAUTH_URL and cookie settings.");
+            return;
+          }
         } catch {
           // ignore
         }
 
-        const pickRedirectTarget = () => {
-          const fallback = callbackUrl || "/dashboard";
-          const candidate = result.url;
-
-          if (!candidate) return fallback;
-          if (candidate.startsWith("/")) return candidate;
-
-          try {
-            const parsed = new URL(candidate);
-            if (typeof window !== "undefined" && parsed.origin === window.location.origin) {
-              return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-            }
-          } catch {
-            // ignore
-          }
-
-          return fallback;
-        };
-
-        const nextUrl = pickRedirectTarget();
-        console.log("Redirecting now to:", nextUrl);
-        redirectTo(nextUrl);
-        return;
+        redirectTo(callbackUrl);
       } else {
         console.log("UNEXPECTED RESULT:", result);
         setError("An error occurred during login");
