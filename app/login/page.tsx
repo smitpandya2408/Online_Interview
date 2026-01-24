@@ -106,7 +106,7 @@ function LoginForm() {
       const result = await signIn("credentials", {
         email,
         password,
-        redirect: false,
+        redirect: true,
         callbackUrl,
       });
 
@@ -116,31 +116,11 @@ function LoginForm() {
       if (result?.error) {
         console.log("SIGNIN ERROR:", result.error);
         setError("Invalid email or password");
-      } else if (result?.ok) {
-        console.log("SIGNIN SUCCESS");
-        console.log("About to redirect to:", callbackUrl);
-
-        // Add a small delay to ensure cookies are set and session is established
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        try {
-          const nextSession = await getSession();
-          if (!nextSession?.user) {
-            console.warn("Session not immediately available, but signin was successful. Redirecting anyway.");
-          }
-        } catch (err) {
-          console.warn("Session check failed, but redirecting anyway:", err);
-        }
-
-        redirectTo(callbackUrl);
-      } else {
-        console.log("UNEXPECTED RESULT:", result);
-        setError("An error occurred during login");
+        setLoading(false);
       }
     } catch (error) {
       console.log("SIGNIN EXCEPTION:", error);
       setError("An error occurred during login");
-    } finally {
       setLoading(false);
     }
   }
