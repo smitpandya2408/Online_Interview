@@ -8,6 +8,7 @@ import { getSession, signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { AUTH_BYPASS_ENABLED } from "@/lib/auth";
 
 function redirectTo(target: string) {
   try {
@@ -75,6 +76,12 @@ function LoginForm() {
       redirectTo(callbackUrl);
     }
   }, [status, session, callbackUrl]);
+
+  React.useEffect(() => {
+    if (AUTH_BYPASS_ENABLED) {
+      redirectTo("/");
+    }
+  }, []);
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");

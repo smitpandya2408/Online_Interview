@@ -15,6 +15,18 @@ console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL || "FALLBACK: http://local
 // Fallback for production if environment variables are not set
 const secret = process.env.NEXTAUTH_SECRET || "test-secret-key-for-development-only-change-in-production";
 
+export const AUTH_BYPASS_ENABLED = process.env.NEXT_PUBLIC_AUTH_BYPASS === "true";
+
+export function getBypassSession() {
+  return {
+    user: {
+      email: "bypass@local",
+      name: "Bypass",
+      role: "admin",
+    },
+  };
+}
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",

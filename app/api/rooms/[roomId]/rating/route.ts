@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/lib/auth";
+import { AUTH_BYPASS_ENABLED, authOptions, getBypassSession } from "@/lib/auth";
 import { getMongoCollections } from "@/lib/db";
 
 type RouteContext = {
@@ -14,7 +14,7 @@ function assertInterviewerOrAdmin(role: unknown) {
 }
 
 export async function GET(_: NextRequest, context: RouteContext) {
-  const session = await getServerSession(authOptions);
+  const session = AUTH_BYPASS_ENABLED ? getBypassSession() : await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -41,7 +41,7 @@ export async function GET(_: NextRequest, context: RouteContext) {
 }
 
 export async function PATCH(req: NextRequest, context: RouteContext) {
-  const session = await getServerSession(authOptions);
+  const session = AUTH_BYPASS_ENABLED ? getBypassSession() : await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

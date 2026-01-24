@@ -8,7 +8,7 @@ import { RatingEditor } from "@/components/dashboard/rating-editor";
 import { DeleteRoomButton } from "@/components/dashboard/delete-room-button";
 import { SiteHeader } from "@/components/site/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { authOptions } from "@/lib/auth";
+import { AUTH_BYPASS_ENABLED, authOptions, getBypassSession } from "@/lib/auth";
 import { getMongoCollections } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +26,7 @@ function toUiStatus(status: unknown) {
 }
 
 export default async function InterviewDetailPage({ params }: InterviewDetailPageProps) {
-  const session = await getServerSession(authOptions);
+  const session = AUTH_BYPASS_ENABLED ? getBypassSession() : await getServerSession(authOptions);
 
   if (!session?.user) {
     redirect("/login");

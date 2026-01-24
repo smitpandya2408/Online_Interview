@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 
 import { nanoid } from "nanoid";
 
-import { authOptions } from "@/lib/auth";
+import { AUTH_BYPASS_ENABLED, authOptions, getBypassSession } from "@/lib/auth";
 import { getMongoCollections } from "@/lib/db";
 
 function parseDurationMinutes(input: unknown) {
@@ -26,7 +26,7 @@ function parseScheduledAt(input: unknown) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = AUTH_BYPASS_ENABLED ? getBypassSession() : await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

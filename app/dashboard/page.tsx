@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
 import { AdminDashboardUI } from "@/components/dashboard/admin-dashboard-ui";
-import { authOptions } from "@/lib/auth";
+import { AUTH_BYPASS_ENABLED, authOptions, getBypassSession } from "@/lib/auth";
 import { getMongoCollections } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ function normalizeStatus(input: unknown) {
 }
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-  const session = await getServerSession(authOptions);
+  const session = AUTH_BYPASS_ENABLED ? getBypassSession() : await getServerSession(authOptions);
 
   if (!session?.user) {
     redirect("/login");
