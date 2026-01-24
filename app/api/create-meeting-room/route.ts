@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getServerSession } from "next-auth";
-
 import { nanoid } from "nanoid";
 
-import { AUTH_BYPASS_ENABLED, authOptions, getBypassSession } from "@/lib/auth";
 import { getMongoCollections } from "@/lib/db";
 
 function parseDurationMinutes(input: unknown) {
@@ -26,10 +23,7 @@ function parseScheduledAt(input: unknown) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = AUTH_BYPASS_ENABLED ? getBypassSession() : await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // Everyone has admin access now
 
     const body = (await req.json().catch(() => ({}))) as {
       durationMinutes?: unknown;

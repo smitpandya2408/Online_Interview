@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -10,8 +9,9 @@ type RecordingControlsProps = {
   isAdmin?: boolean;
 };
 
+// Everyone can record now
 function canRecord(role: unknown) {
-  return role === "admin" || role === "interviewer";
+  return true;
 }
 
 function RecordIcon() {
@@ -40,13 +40,13 @@ function RecordingIndicator() {
 }
 
 export function RecordingControls({ roomId }: RecordingControlsProps) {
-  const { data: session } = useSession();
   const [isRecording, setIsRecording] = React.useState(false);
   const [recordingTime, setRecordingTime] = React.useState(0);
   const [isUploading, setIsUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   
-  const userRole = session?.user?.role;
+  // Everyone can record now
+  const userRole = "admin";
   const canUserRecord = canRecord(userRole);
   
   const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);

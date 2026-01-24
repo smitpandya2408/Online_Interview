@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import { SiteHeader } from "@/components/site/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -23,13 +22,13 @@ type Recording = {
 };
 
 export default function RecordingsPage() {
-  const { data: session } = useSession();
   const [recordings, setRecordings] = React.useState<Recording[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
-  const isAdmin = session?.user?.role === 'admin';
+  // Everyone has admin access now
+  const isAdmin = true;
 
   React.useEffect(() => {
     fetchRecordings();

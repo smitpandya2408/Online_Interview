@@ -1,9 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { getServerSession } from "next-auth";
-
 import { AdminDashboardUI } from "@/components/dashboard/admin-dashboard-ui";
-import { AUTH_BYPASS_ENABLED, authOptions, getBypassSession } from "@/lib/auth";
 import { getMongoCollections } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -19,12 +16,8 @@ function normalizeStatus(input: unknown) {
 }
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-  const session = AUTH_BYPASS_ENABLED ? getBypassSession() : await getServerSession(authOptions);
-
-  const role = session?.user?.role ?? "admin";
-  if (role !== "admin" && role !== "interviewer") {
-    redirect("/");
-  }
+  // Everyone has admin access now
+  const role = "admin";
 
   const sp = (await searchParams) || {};
   const statusFilter = normalizeStatus(sp.status);
@@ -75,7 +68,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   return (
     <>
       <AdminDashboardUI
-        user={{ email: session?.user?.email ?? "", name: session?.user?.name ?? "" }}
+        user={{ email: "admin@local", name: "Admin" }}
         interviews={interviews}
         statusFilter={statusFilter}
         totalInterviews={totalInterviews}

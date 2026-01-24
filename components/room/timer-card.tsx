@@ -3,7 +3,6 @@
 import * as React from "react";
 
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { io, type Socket } from "socket.io-client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,13 +28,15 @@ function formatDuration(totalSeconds: number) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+// Everyone can end meetings now
 function canEndMeeting(role: unknown) {
-  return role === "admin" || role === "interviewer";
+  return true;
 }
 
 export function TimerCard({ roomId, startedAtIso, durationMinutes = 60 }: TimerCardProps) {
   const router = useRouter();
-  const { data: session } = useSession();
+  // Everyone is admin now
+  const userRole = "admin";
 
   const [mounted, setMounted] = React.useState(false);
   const [nowMs, setNowMs] = React.useState<number | null>(null);
@@ -65,8 +66,8 @@ export function TimerCard({ roomId, startedAtIso, durationMinutes = 60 }: TimerC
         s.on("room:ended", (payload: { roomId?: string }) => {
           if (!mounted) return;
           if (!payload || payload.roomId !== roomId) return;
-          const role = session?.user?.role;
-          router.replace(canEndMeeting(role) ? "/dashboard" : "/join");
+          // Everyone is admin now, redirect to dashboard
+          router.replace("/dashboard");
         });
 
         if (mounted) socketRef.current = s;
@@ -82,7 +83,7 @@ export function TimerCard({ roomId, startedAtIso, durationMinutes = 60 }: TimerC
       socketRef.current?.disconnect();
       socketRef.current = null;
     };
-  }, [roomId, router, session?.user?.role]);
+  }, [roomId, router]);
 
   const startedAtMs = React.useMemo(() => {
     if (!startedAtIso) return null;
@@ -103,7 +104,8 @@ export function TimerCard({ roomId, startedAtIso, durationMinutes = 60 }: TimerC
   const elapsedLabel = isRunning ? formatDuration(elapsedMs / 1000) : "--:--";
   const remainingLabel = isRunning ? formatDuration(remainingMs / 1000) : "--:--";
 
-  const role = session?.user?.role;
+  // Everyone is admin now
+  const role = "admin";
   const showEndButton = canEndMeeting(role) && isRunning && !isEnded;
 
   const endMeeting = React.useCallback(async () => {

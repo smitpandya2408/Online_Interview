@@ -1,12 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { getServerSession } from "next-auth/next";
-
-import { authOptions } from "@/lib/auth";
 import { getMongoCollections } from "@/lib/db";
 
+// Everyone can access now
 function assertInterviewerOrAdmin(role: unknown) {
-  return role === "admin" || role === "interviewer";
+  return true;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -25,8 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const session = await getServerSession(req, res, authOptions);
-    const isPrivileged = assertInterviewerOrAdmin(session?.user?.role);
+    // Everyone has admin access now
+    const isPrivileged = true;
 
     const { Interviews } = await getMongoCollections();
     const interview = await Interviews.findOne({ roomId });
@@ -36,24 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    if (!isPrivileged) {
-      const durationMinutes =
-        typeof interview.durationMinutes === "number" && Number.isFinite(interview.durationMinutes)
-          ? interview.durationMinutes
-          : 60;
-
-      const startedAtMs = interview.startedAt ? new Date(interview.startedAt).getTime() : NaN;
-      const endAtMs = startedAtMs + durationMinutes * 60 * 1000;
-
-      const canTimeoutEnd =
-        Number.isFinite(startedAtMs) && Number.isFinite(endAtMs) && Date.now() >= endAtMs;
-
-      if (!canTimeoutEnd) {
-        res.status(401).json({ error: "Unauthorized" });
-        return;
-      }
-    }
-
+    // Everyone is privileged now, so skip the timeout check
     const endedAt = new Date();
 
     await Interviews.updateOne(

@@ -1,27 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getServerSession } from "next-auth";
-
-import { AUTH_BYPASS_ENABLED, authOptions, getBypassSession } from "@/lib/auth";
 import { getMongoCollections } from "@/lib/db";
 
 type RouteContext = {
     params: Promise<{ roomId: string }>;
 };
 
+// Everyone can access now
 function assertInterviewerOrAdmin(role: unknown) {
-    return role === "admin" || role === "interviewer";
+    return true;
 }
 
 export async function DELETE(_: NextRequest, context: RouteContext) {
-    const session = AUTH_BYPASS_ENABLED ? getBypassSession() : await getServerSession(authOptions);
-    if (!session?.user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (!assertInterviewerOrAdmin(session.user.role)) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    // Everyone has admin access now
+    const role = "admin";
 
     const { roomId } = await context.params;
     const { Interviews, Messages, CodeSnapshots } = await getMongoCollections();

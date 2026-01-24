@@ -1,12 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { getServerSession } from "next-auth";
-
 import { PrintButton } from "@/components/dashboard/print-button";
 import { SiteHeader } from "@/components/site/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AUTH_BYPASS_ENABLED, authOptions, getBypassSession } from "@/lib/auth";
 import { getMongoCollections } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -24,12 +21,8 @@ function toUiStatus(status: unknown) {
 }
 
 export default async function InterviewReportPage({ params }: InterviewReportPageProps) {
-  const session = AUTH_BYPASS_ENABLED ? getBypassSession() : await getServerSession(authOptions);
-
-  const role = session?.user?.role ?? "admin";
-  if (role !== "admin" && role !== "interviewer") {
-    redirect("/");
-  }
+  // Everyone has admin access now
+  const role = "admin";
 
   const { roomId } = await params;
 
