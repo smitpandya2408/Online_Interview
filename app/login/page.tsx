@@ -8,7 +8,6 @@ import { getSession, signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { AUTH_BYPASS_ENABLED } from "@/lib/auth";
 
 function redirectTo(target: string) {
   try {
@@ -53,6 +52,7 @@ function sanitizeCallbackUrl(raw: string | null | undefined) {
 function LoginForm() {
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
+  const authBypassEnabled = process.env.NEXT_PUBLIC_AUTH_BYPASS === "true";
 
   // Suppress NextAuth session event logs in production
   React.useEffect(() => {
@@ -78,10 +78,10 @@ function LoginForm() {
   }, [status, session, callbackUrl]);
 
   React.useEffect(() => {
-    if (AUTH_BYPASS_ENABLED) {
+    if (authBypassEnabled) {
       redirectTo("/");
     }
-  }, []);
+  }, [authBypassEnabled]);
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
