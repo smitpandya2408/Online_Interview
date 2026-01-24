@@ -15,6 +15,23 @@ console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL || "FALLBACK: http://local
 // Fallback for production if environment variables are not set
 const secret = process.env.NEXTAUTH_SECRET || "test-secret-key-for-development-only-change-in-production";
 
+// Get NEXTAUTH_URL with better fallback for Railway
+const getNextAuthUrl = () => {
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL;
+  }
+  
+  // For Railway, try to use RAILWAY_PUBLIC_DOMAIN
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  }
+  
+  // Fallback
+  return process.env.NODE_ENV === "production" 
+    ? "https://online-interview.up.railway.app" 
+    : "http://localhost:3000";
+};
+
 export const AUTH_BYPASS_ENABLED = process.env.NEXT_PUBLIC_AUTH_BYPASS === "true";
 
 export function getBypassSession() {
@@ -33,11 +50,12 @@ export const authOptions: NextAuthOptions = {
     maxAge: 24 * 60 * 60, // 24 hours
   },
   secret: secret,
-  debug: false, // Disable debug in production to reduce console noise
+  debug: process.env.NODE_ENV === "development", // Only debug in development
   pages: {
     signIn: "/login",
   },
-  useSecureCookies: process.env.NODE_ENV === "production", // Only use secure cookies in production
+  useSecureCookies: process.env.NODE_ENV === "production",
+  trustHost: true, // Trust the host for Railway deployment
   providers: [
     CredentialsProvider({
       name: "Credentials",

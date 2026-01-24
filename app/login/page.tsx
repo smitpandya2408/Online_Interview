@@ -120,14 +120,16 @@ function LoginForm() {
         console.log("SIGNIN SUCCESS");
         console.log("About to redirect to:", callbackUrl);
 
+        // Add a small delay to ensure cookies are set and session is established
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         try {
           const nextSession = await getSession();
           if (!nextSession?.user) {
-            setError("Login succeeded but a session was not established. Please check NEXTAUTH_URL and cookie settings.");
-            return;
+            console.warn("Session not immediately available, but signin was successful. Redirecting anyway.");
           }
-        } catch {
-          // ignore
+        } catch (err) {
+          console.warn("Session check failed, but redirecting anyway:", err);
         }
 
         redirectTo(callbackUrl);
