@@ -55,7 +55,6 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
   useSecureCookies: process.env.NODE_ENV === "production",
-  trustHost: true, // Trust the host for Railway deployment
   providers: [
     CredentialsProvider({
       name: "Credentials",
